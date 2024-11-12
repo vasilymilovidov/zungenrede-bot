@@ -397,29 +397,11 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
     let lines: Vec<&str> = response.lines().collect();
 
     let mut translation = Translation {
-        original: String::new(), // We'll set this after checking for article
-        translation: String::new(),
+        original: lines.first().unwrap_or(&original).trim().to_string(),
+        translation: lines.get(1).unwrap_or(&"").trim().to_string(),
         grammar_forms: Vec::new(),
         conjugations: None,
         examples: Vec::new(),
-    };
-
-    let original_word = lines.first().unwrap_or(&original).trim().to_string();
-    translation.translation = lines.get(1).unwrap_or(&"").trim().to_string();
-
-    let article_line = lines
-        .iter()
-        .skip(2) // Skip original word and translation
-        .find(|&&line| {
-            line.trim().starts_with("der ")
-                || line.trim().starts_with("die ")
-                || line.trim().starts_with("das ")
-        });
-
-    translation.original = if let Some(article) = article_line {
-        article.trim().to_string()
-    } else {
-        original_word
     };
 
     if lines.len() > 2 {
@@ -442,10 +424,7 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
                     conjugations.push(line.to_string());
                 } else if in_conjugation_section {
                     conjugations.push(line.to_string());
-                } else if !line.starts_with("der ")
-                    && !line.starts_with("die ")
-                    && !line.starts_with("das ")
-                {
+                } else {
                     translation.grammar_forms.push(line.to_string());
                 }
             }
@@ -482,23 +461,42 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
 fn format_translation_response(translation: &Translation) -> String {
     let mut response = String::new();
 
-    response.push_str(&format!("➡️ {}\n", translation.original));
-    response.push_str(&format!("⬅️ {}\n", translation.translation));
+    // Check if the word has grammar forms and the first form is an article
+    let is_noun = translation
+        .grammar_forms
+        .first()
+        .map(|form| {
+            form.trim().matches(' ').count() == 0 && ["der", "die", "das"].contains(&form.trim())
+        })
+        .unwrap_or(false);
+
+    // Check if the original word contains Cyrillic characters (Russian input)
+    let is_russian = translation
+        .original
+        .chars()
+        .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
+
+    if is_noun {
+        if let Some(article) = translation.grammar_forms.first() {
+            if is_russian {
+                // For Russian input, show original word first, then article with German translation
+                response.push_str(&format!("➡️ {}\n", translation.original));
+                response.push_str(&format!("⬅️ {} {}\n", article, translation.translation));
+            } else {
+                // For German input, show article with original word first
+                response.push_str(&format!("➡️ {} {}\n", article, translation.original));
+                response.push_str(&format!("⬅️ {}\n", translation.translation));
+            }
+        }
+    } else {
+        response.push_str(&format!("➡️ {}\n", translation.original));
+        response.push_str(&format!("⬅️ {}\n", translation.translation));
+    }
 
     if !translation.grammar_forms.is_empty() {
-        let filtered_forms: Vec<_> = translation
-            .grammar_forms
-            .iter()
-            .filter(|&form| {
-                !form.starts_with("der ") && !form.starts_with("die ") && !form.starts_with("das ")
-            })
-            .collect();
-
-        if !filtered_forms.is_empty() {
-            response.push_str("\n🔤 Грамматика:\n");
-            for form in filtered_forms {
-                response.push_str(&format!("• {}\n", form));
-            }
+        response.push_str("\n🔤 Грамматика:\n");
+        for form in &translation.grammar_forms {
+            response.push_str(&format!("• {}\n", form));
         }
     }
 
