@@ -88,6 +88,17 @@ Provide your explanation in Russian. Focus on
 - Usage rules
 - Any special considerations or common mistakes"#;
 
+const GRAMMAR_CHECK_PROMPT: &str = r#"You are a German language grammar checker.
+Check the given German text for grammar mistakes and explain any issues found.
+Provide your response in Russian in the following format:
+- First line: Original text
+- Second line: Corrected version (if there are mistakes)
+- Then list all grammar issues found (if any)
+- Explain why they are incorrect and how to fix them"#;
+
+const FREEFORM_PROMPT: &str = r#"You are a German language expert. 
+Please answer the following question about German language in Russian."#;
+
 fn get_allowed_users() -> Vec<i64> {
     let users = env::var("ALLOWED_USERS")
         .unwrap_or_default()
@@ -183,13 +194,18 @@ enum InputType {
     GermanWord,
     GermanSentence,
     Explanation,
+    GrammarCheck,
+    Freeform,
 }
 
 fn analyze_input(text: &str) -> InputType {
-    if text.starts_with("?:") {
+    if text.starts_with("??:") {
+        InputType::Freeform
+    } else if text.starts_with("?:") {
         InputType::Explanation
+    } else if text.starts_with("!:") {
+        InputType::GrammarCheck
     } else {
-        // Cyrillic characters check
         let has_cyrillic = text
             .chars()
             .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
@@ -219,11 +235,19 @@ async fn translate_text(text: &str) -> Result<String> {
 
     let client = reqwest::Client::new();
 
-    // Select the appropriate prompt
     let (system_prompt, processed_text) = match analyze_input(text) {
         InputType::Explanation => {
             let clean_text = text.trim_start_matches("?:").trim();
             (EXPLANATION_PROMPT, clean_text)
+        }
+        InputType::GrammarCheck => {
+            let clean_text = text.trim_start_matches("!:").trim();
+            (GRAMMAR_CHECK_PROMPT, clean_text)
+        }
+        InputType::Freeform => {
+            // Add this case
+            let clean_text = text.trim_start_matches("??:").trim();
+            (FREEFORM_PROMPT, clean_text)
         }
         _ => {
             let prompt = match analyze_input(text) {
@@ -231,7 +255,9 @@ async fn translate_text(text: &str) -> Result<String> {
                 InputType::RussianSentence => RUSSIAN_TO_GERMAN_PROMPT,
                 InputType::GermanWord => GERMAN_WORD_PROMPT,
                 InputType::GermanSentence => GERMAN_SENTENCE_PROMPT,
-                InputType::Explanation => unreachable!(),
+                InputType::Explanation | InputType::GrammarCheck | InputType::Freeform => {
+                    unreachable!()
+                }
             };
             (prompt, text)
         }
@@ -372,23 +398,17 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
         let claude_response = translate_text(text).await?;
 
         let response = match analyze_input(text) {
-            InputType::Explanation => {
-                // Return the explanation response directly
+            InputType::Explanation | InputType::GrammarCheck | InputType::Freeform => {
                 claude_response.trim().to_string()
             }
             InputType::GermanWord | InputType::RussianWord => {
-                // Parse and store detailed word translations
                 let translation = parse_translation_response(text, &claude_response);
-
-                // Save word translations to storage
                 let mut translations = read_translations()?;
                 translations.push(translation.clone());
                 write_translations(&translations)?;
-
                 format_translation_response(&translation)
             }
             InputType::RussianSentence | InputType::GermanSentence => {
-                // Return the response without storing
                 format!("{} ➜ {}", text, claude_response.trim())
             }
         };
