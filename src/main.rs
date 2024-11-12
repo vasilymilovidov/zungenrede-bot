@@ -6,7 +6,6 @@ use tokio::sync::broadcast;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 // Constants
-const STORAGE_FILE: &str = "translations_storage.json";
 const WELCOME_MESSAGE: &str =
     "Hi! Send me any text in German and I'll translate it to Russian using ChatGPT.";
 const SHUTDOWN_MESSAGE: &str = "Shutting down...";
@@ -223,8 +222,16 @@ async fn translate_text(text: &str) -> Result<String> {
     Ok(response.content[0].text.clone())
 }
 
+fn get_storage_path() -> String {
+    std::env::var("STORAGE_FILE").unwrap_or_else(|_| "translations_storage.json".to_string())
+}
+
 fn read_translations() -> Result<Vec<Translation>> {
-    if let Ok(data) = fs::read_to_string(STORAGE_FILE) {
+    let path = get_storage_path();
+    if !std::path::Path::new(&path).exists() {
+        fs::write(&path, "[]")?;
+    }
+    if let Ok(data) = fs::read_to_string(&path) {
         let translations: Vec<Translation> = serde_json::from_str(&data)?;
         Ok(translations)
     } else {
@@ -233,8 +240,9 @@ fn read_translations() -> Result<Vec<Translation>> {
 }
 
 fn write_translations(translations: &[Translation]) -> Result<()> {
+    let path = get_storage_path();
     let data = serde_json::to_string(translations)?;
-    fs::write(STORAGE_FILE, data)?;
+    fs::write(&path, data)?;
     Ok(())
 }
 
