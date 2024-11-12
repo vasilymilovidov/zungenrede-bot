@@ -90,7 +90,7 @@ Provide your explanation in Russian. Focus on
 
 const GRAMMAR_CHECK_PROMPT: &str = r#"You are a German language grammar checker.
 Check the given German text for grammar mistakes and explain any issues found.
-Be concise and clear. Don't give an explanation for correct text.
+Be concise and clear. Don't list mistakes. Don't give an explanation for correct text. 
 Provide your response in Russian in the following format:
 - First line: Original text with mistakes marked in bold (using *word* format)
 - Second line: Corrected version (if there are mistakes)"#;
