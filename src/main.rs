@@ -200,10 +200,15 @@ fn analyze_input(text: &str) -> InputType {
             } else {
                 InputType::RussianSentence
             }
-        } else if !text.contains(' ') {
-            InputType::GermanWord
         } else {
-            InputType::GermanSentence
+            let words: Vec<_> = text.trim().split_whitespace().collect();
+            let is_german_noun = words.len() == 2 && ["der", "die", "das"].contains(&words[0]);
+
+            if !text.contains(' ') || is_german_noun {
+                InputType::GermanWord
+            } else {
+                InputType::GermanSentence
+            }
         }
     }
 }
@@ -476,6 +481,14 @@ fn format_translation_response(translation: &Translation) -> String {
         .chars()
         .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
 
+    // Check if the original word already starts with an article
+    let already_has_article = translation
+        .original
+        .split_whitespace()
+        .next()
+        .map(|first_word| ["der", "die", "das"].contains(&first_word))
+        .unwrap_or(false);
+
     if is_noun {
         if let Some(article) = translation.grammar_forms.first() {
             if is_russian {
@@ -483,8 +496,12 @@ fn format_translation_response(translation: &Translation) -> String {
                 response.push_str(&format!("➡️ {}\n", translation.original));
                 response.push_str(&format!("⬅️ {} {}\n", article, translation.translation));
             } else {
-                // For German input, show article with original word first
-                response.push_str(&format!("➡️ {} {}\n", article, translation.original));
+                // For German input, show original word as is if it already has an article
+                if already_has_article {
+                    response.push_str(&format!("➡️ {}\n", translation.original));
+                } else {
+                    response.push_str(&format!("➡️ {} {}\n", article, translation.original));
+                }
                 response.push_str(&format!("⬅️ {}\n", translation.translation));
             }
         }
