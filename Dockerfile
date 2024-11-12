@@ -9,6 +9,9 @@ WORKDIR /app
 COPY . .
 RUN cargo build --release
 
+# Create empty translations file if it doesn't exist
+RUN touch translations_storage.json
+
 FROM debian:bullseye-slim
 
 # Install runtime dependencies
@@ -19,5 +22,9 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=builder /app/target/release/zungenrede-bot .
 COPY --from=builder /app/translations_storage.json .
+
+# Ensure the file is writable
+RUN touch translations_storage.json && \
+    chmod 666 translations_storage.json
 
 CMD ["./zungenrede-bot"]
