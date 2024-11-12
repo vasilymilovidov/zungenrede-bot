@@ -98,6 +98,18 @@ Provide your response in Russian in the following format:
 const FREEFORM_PROMPT: &str = r#"You are a German language expert. 
 Please answer the following question about German language in Russian."#;
 
+const SIMPLIFY_PROMPT: &str = r#"You are a German language teacher.
+Simplify the given German sentence while preserving its main meaning.
+Make it easier to understand for beginners by:
+- Using simpler vocabulary
+- Simplifying grammar structures
+- Breaking complex sentences into shorter ones if needed
+
+Provide your response in the following format:
+- First line: Original sentence
+- Second line: Simplified version
+- Third line: Russian translation of the simplified version"#;
+
 fn get_allowed_users() -> Vec<i64> {
     let users = env::var("ALLOWED_USERS")
         .unwrap_or_default()
@@ -195,6 +207,7 @@ enum InputType {
     Explanation,
     GrammarCheck,
     Freeform,
+    Simplify,
 }
 
 fn analyze_input(text: &str) -> InputType {
@@ -204,6 +217,9 @@ fn analyze_input(text: &str) -> InputType {
         InputType::Explanation
     } else if text.starts_with("!:") {
         InputType::GrammarCheck
+    } else if text.starts_with("-:") {
+        // Add this block
+        InputType::Simplify
     } else {
         let has_cyrillic = text
             .chars()
@@ -244,9 +260,12 @@ async fn translate_text(text: &str) -> Result<String> {
             (GRAMMAR_CHECK_PROMPT, clean_text)
         }
         InputType::Freeform => {
-            // Add this case
             let clean_text = text.trim_start_matches("??:").trim();
             (FREEFORM_PROMPT, clean_text)
+        }
+        InputType::Simplify => {
+            let clean_text = text.trim_start_matches("-:").trim();
+            (SIMPLIFY_PROMPT, clean_text)
         }
         _ => {
             let prompt = match analyze_input(text) {
@@ -254,7 +273,10 @@ async fn translate_text(text: &str) -> Result<String> {
                 InputType::RussianSentence => RUSSIAN_TO_GERMAN_PROMPT,
                 InputType::GermanWord => GERMAN_WORD_PROMPT,
                 InputType::GermanSentence => GERMAN_SENTENCE_PROMPT,
-                InputType::Explanation | InputType::GrammarCheck | InputType::Freeform => {
+                InputType::Explanation
+                | InputType::GrammarCheck
+                | InputType::Freeform
+                | InputType::Simplify => {
                     unreachable!()
                 }
             };
@@ -397,9 +419,10 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
         let claude_response = translate_text(text).await?;
 
         let response = match analyze_input(text) {
-            InputType::Explanation | InputType::GrammarCheck | InputType::Freeform => {
-                claude_response.trim().to_string()
-            }
+            InputType::Explanation
+            | InputType::GrammarCheck
+            | InputType::Freeform
+            | InputType::Simplify => claude_response.trim().to_string(),
             InputType::GermanWord | InputType::RussianWord => {
                 let translation = parse_translation_response(text, &claude_response);
                 let mut translations = read_translations()?;
