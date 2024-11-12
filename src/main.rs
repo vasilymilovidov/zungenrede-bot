@@ -424,6 +424,11 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
                     conjugations.push(line.to_string());
                 } else if in_conjugation_section {
                     conjugations.push(line.to_string());
+                } else if line.starts_with("der ")
+                    || line.starts_with("die ")
+                    || line.starts_with("das ")
+                {
+                    translation.original = line.to_string();
                 } else {
                     translation.grammar_forms.push(line.to_string());
                 }
@@ -465,9 +470,19 @@ fn format_translation_response(translation: &Translation) -> String {
     response.push_str(&format!("⬅️ {}\n", translation.translation));
 
     if !translation.grammar_forms.is_empty() {
-        response.push_str("\n🔤 Грамматика:\n");
-        for form in &translation.grammar_forms {
-            response.push_str(&format!("• {}\n", form));
+        let filtered_forms: Vec<_> = translation
+            .grammar_forms
+            .iter()
+            .filter(|&form| {
+                !form.starts_with("der ") && !form.starts_with("die ") && !form.starts_with("das ")
+            })
+            .collect();
+
+        if !filtered_forms.is_empty() {
+            response.push_str("\n🔤 Грамматика:\n");
+            for form in filtered_forms {
+                response.push_str(&format!("• {}\n", form));
+            }
         }
     }
 
