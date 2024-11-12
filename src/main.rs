@@ -91,10 +91,8 @@ Provide your explanation in Russian. Focus on
 const GRAMMAR_CHECK_PROMPT: &str = r#"You are a German language grammar checker.
 Check the given German text for grammar mistakes and explain any issues found.
 Provide your response in Russian in the following format:
-- First line: Original text
-- Second line: Corrected version (if there are mistakes)
-- Then list all grammar issues found (if any)
-- Explain why they are incorrect and how to fix them"#;
+- First line: Original text with mistakes marked in bold (using **word** format)
+- Second line: Corrected version (if there are mistakes)"#;
 
 const FREEFORM_PROMPT: &str = r#"You are a German language expert. 
 Please answer the following question about German language in Russian."#;
@@ -217,7 +215,7 @@ fn analyze_input(text: &str) -> InputType {
                 InputType::RussianSentence
             }
         } else {
-            let words: Vec<_> = text.trim().split_whitespace().collect();
+            let words: Vec<_> = text.split_whitespace().collect();
             let is_german_noun = words.len() == 2 && ["der", "die", "das"].contains(&words[0]);
 
             if !text.contains(' ') || is_german_noun {
