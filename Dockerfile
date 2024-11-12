@@ -24,5 +24,6 @@ RUN mkdir -p /app/data && \
     chmod 777 /app/data
 
 ENV STORAGE_FILE=/app/data/translations_storage.json
+ENV ALLOWED_USERS=""
 
 CMD ["./zungenrede-bot"]
