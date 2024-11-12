@@ -397,11 +397,29 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
     let lines: Vec<&str> = response.lines().collect();
 
     let mut translation = Translation {
-        original: lines.first().unwrap_or(&original).trim().to_string(),
-        translation: lines.get(1).unwrap_or(&"").trim().to_string(),
+        original: String::new(), // We'll set this after checking for article
+        translation: String::new(),
         grammar_forms: Vec::new(),
         conjugations: None,
         examples: Vec::new(),
+    };
+
+    let original_word = lines.first().unwrap_or(&original).trim().to_string();
+    translation.translation = lines.get(1).unwrap_or(&"").trim().to_string();
+
+    let article_line = lines
+        .iter()
+        .skip(2) // Skip original word and translation
+        .find(|&&line| {
+            line.trim().starts_with("der ")
+                || line.trim().starts_with("die ")
+                || line.trim().starts_with("das ")
+        });
+
+    translation.original = if let Some(article) = article_line {
+        article.trim().to_string()
+    } else {
+        original_word
     };
 
     if lines.len() > 2 {
@@ -424,12 +442,10 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
                     conjugations.push(line.to_string());
                 } else if in_conjugation_section {
                     conjugations.push(line.to_string());
-                } else if line.starts_with("der ")
-                    || line.starts_with("die ")
-                    || line.starts_with("das ")
+                } else if !line.starts_with("der ")
+                    && !line.starts_with("die ")
+                    && !line.starts_with("das ")
                 {
-                    translation.original = line.to_string();
-                } else {
                     translation.grammar_forms.push(line.to_string());
                 }
             }
