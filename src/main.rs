@@ -88,6 +88,24 @@ Provide your explanation in Russian. Focus on
 - Usage rules
 - Any special considerations or common mistakes"#;
 
+fn get_allowed_users() -> Vec<i64> {
+    env::var("ALLOWED_USERS")
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|id| id.trim().parse().ok())
+        .collect()
+}
+
+async fn is_user_authorized(msg: &Message) -> bool {
+    let allowed_users = get_allowed_users();
+    let user_id = msg
+        .clone()
+        .from
+        .map(|u| i64::try_from(u.id.0).unwrap_or(0))
+        .unwrap_or(0);
+    allowed_users.contains(&user_id)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct ClaudeRequest {
     model: String,
@@ -299,6 +317,14 @@ async fn handle_command(
     cmd: Command,
     shutdown: &broadcast::Sender<()>,
 ) -> Result<()> {
+    if !is_user_authorized(msg).await {
+        bot.send_message(
+            msg.chat.id,
+            "Sorry, you are not authorized to use this bot.",
+        )
+        .await?;
+        return Ok(());
+    }
     match cmd {
         Command::Start => {
             bot.send_message(msg.chat.id, WELCOME_MESSAGE).await?;
@@ -312,6 +338,14 @@ async fn handle_command(
 }
 
 async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
+    if !is_user_authorized(msg).await {
+        bot.send_message(
+            msg.chat.id,
+            "Sorry, you are not authorized to use this bot.",
+        )
+        .await?;
+        return Ok(());
+    }
     if let Some(text) = msg.text() {
         let claude_response = translate_text(text).await?;
 
