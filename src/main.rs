@@ -89,11 +89,20 @@ Provide your explanation in Russian. Focus on
 - Any special considerations or common mistakes"#;
 
 fn get_allowed_users() -> Vec<i64> {
-    env::var("ALLOWED_USERS")
+    let users = env::var("ALLOWED_USERS")
         .unwrap_or_default()
         .split(',')
-        .filter_map(|id| id.trim().parse().ok())
-        .collect()
+        .filter_map(|id| {
+            let parsed = id.trim().parse::<i64>();
+            if let Err(e) = &parsed {
+                log::warn!("Failed to parse user ID '{}': {}", id, e);
+            }
+            parsed.ok()
+        })
+        .collect::<Vec<i64>>();
+
+    log::info!("Allowed users: {:?}", users);
+    users
 }
 
 async fn is_user_authorized(msg: &Message) -> bool {
@@ -103,7 +112,15 @@ async fn is_user_authorized(msg: &Message) -> bool {
         .from
         .map(|u| i64::try_from(u.id.0).unwrap_or(0))
         .unwrap_or(0);
-    allowed_users.contains(&user_id)
+    // allowed_users.contains(&user_id);
+    let is_authorized = allowed_users.contains(&user_id);
+    log::info!(
+        "Authorization check - User ID: {}, Authorized: {}, Allowed users: {:?}",
+        user_id,
+        is_authorized,
+        allowed_users
+    );
+    is_authorized
 }
 
 #[derive(Debug, Serialize, Deserialize)]
