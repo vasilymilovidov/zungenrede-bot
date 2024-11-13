@@ -6,8 +6,31 @@ use tokio::sync::broadcast;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 // Constants
-const WELCOME_MESSAGE: &str =
-    "Hi! Send me any text in German and I'll translate it to Russian using ChatGPT.";
+const WELCOME_MESSAGE: &str = r#"Доступные комманды:
+/start - Запустить бота
+/help - Показать это сообщение
+/export - Экспортировать базу данных переводов
+/clear - Очистить базу данных переводов
+/exit - Остановить бота
+
+Специальные префиксы для запросов:
+!: [запрос] - Проверить грамматику немецкого текста
+-: [запрос] - Упростить немецкое предложение
+?: [запрос]  - Объяснить грамматику немецкого текста
+??: [запрос] - Задать вопрос о немецком языке в свободной форме
+
+Как пользоваться:
+• Отправьте немецкое или русское слово для перевода и грамматической справки
+• Отправьте немецкое или русское предложение для перевода
+• Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
+
+Примеры:
+??: Как использоваь Akkusative?
+?: Der Mann isst einen Apfel
+!: Ich habe gestern nach Berlin gefahren
+-: Ich würde gerne wissen, ob Sie morgen Zeit haben
+
+Бот автоматически определяет язык ввода и тип запроса."#;
 
 const SHUTDOWN_MESSAGE: &str = "Shutting down...";
 
@@ -117,6 +140,32 @@ const CONTEXT_PROMPT: &str = r#"You are a German language expert.
 The following query is about this word/phrase: {context}
 Please answer the query in Russian, providing relevant information about the context word/phrase."#;
 
+const HELP_MESSAGE: &str = r#"Доступные комманды:
+/start - Запустить бота
+/help - Показать это сообщение
+/export - Экспортировать базу данных переводов
+/clear - Очистить базу данных переводов
+/exit - Остановить бота
+
+Специальные префиксы для запросов:
+!: [запрос] - Проверить грамматику немецкого текста
+-: [запрос] - Упростить немецкое предложение
+?: [запрос]  - Объяснить грамматику немецкого текста
+??: [запрос] - Задать вопрос о немецком языке в свободной форме
+
+Как пользоваться:
+• Отправьте немецкое или русское слово для перевода и грамматической справки
+• Отправьте немецкое или русское предложение для перевода
+• Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
+
+Примеры:
+??: Как использоваь Akkusative?
+?: Der Mann isst einen Apfel
+!: Ich habe gestern nach Berlin gefahren
+-: Ich würde gerne wissen, ob Sie morgen Zeit haben
+
+Бот автоматически определяет язык ввода и тип запроса."#;
+
 fn get_allowed_users() -> Vec<i64> {
     let users = env::var("ALLOWED_USERS")
         .unwrap_or_default()
@@ -200,6 +249,8 @@ struct Example {
 enum Command {
     #[command(description = "start the bot")]
     Start,
+    #[command(description = "show help information")]
+    Help,
     #[command(description = "shutdown the bot")]
     Exit,
     #[command(description = "export translations database")]
@@ -428,6 +479,9 @@ async fn handle_command(
     match cmd {
         Command::Start => {
             bot.send_message(msg.chat.id, WELCOME_MESSAGE).await?;
+        }
+        Command::Help => {
+            bot.send_message(msg.chat.id, HELP_MESSAGE).await?;
         }
         Command::Exit => {
             bot.send_message(msg.chat.id, SHUTDOWN_MESSAGE).await?;
