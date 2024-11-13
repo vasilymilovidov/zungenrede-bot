@@ -420,6 +420,10 @@ async fn main() {
     pretty_env_logger::init();
     log::info!("Starting translation bot...");
 
+    if let Some(parent) = std::path::Path::new(&get_storage_path()).parent() {
+        std::fs::create_dir_all(parent).expect("Failed to create storage directory");
+    }
+
     let bot = Bot::from_env();
     let (shutdown_tx, _) = broadcast::channel(1);
 

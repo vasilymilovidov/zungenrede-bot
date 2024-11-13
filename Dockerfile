@@ -30,11 +30,8 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=builder /app/target/release/zungenrede-bot .
 
-# Create directory for storage
-RUN mkdir -p /app/data && \
-    chmod 777 /app/data
-
-ENV STORAGE_FILE=/app/data/translations_storage.json
+# Use Railway's specified mount path
+ENV STORAGE_FILE=/translations-data/translations_storage.json
 ENV ALLOWED_USERS=""
 
 CMD ["./zungenrede-bot"]
