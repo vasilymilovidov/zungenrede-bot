@@ -8,9 +8,12 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 // Constants
 const WELCOME_MESSAGE: &str =
     "Hi! Send me any text in German and I'll translate it to Russian using ChatGPT.";
+
 const SHUTDOWN_MESSAGE: &str = "Shutting down...";
+
 const RUSSIAN_TO_GERMAN_PROMPT: &str = r#"You are a Russian-German translator. 
 Simply translate the given Russian word or phrase to German without any additional information."#;
+
 const GERMAN_WORD_PROMPT: &str = r#"You are a German-Russian translator. 
 For verbs:
 - First line: Original word in German
@@ -82,7 +85,7 @@ Simply translate the given German sentence to Russian without any additional inf
 
 const EXPLANATION_PROMPT: &str = r#"You are a German language teacher.
 Explain the grammar and meaning of each word in the given German text.
-Provide your explanation in Russian. Focus on
+Provide your explanation in Russian. Try to be concise and short. Focus on
 - Why is the sentence structured this way?
 - Grammar forms
 - Usage rules
@@ -90,7 +93,7 @@ Provide your explanation in Russian. Focus on
 
 const GRAMMAR_CHECK_PROMPT: &str = r#"You are a German language grammar checker.
 Check the given German text for grammar mistakes and explain any issues found.
-Be concise and clear. Don't list mistakes. Don't give an explanation for correct text. 
+Be concise and short. Don't list mistakes. Don't give an explanation for correct text. 
 Provide your response in Russian in the following format:
 - First line: Original text with mistakes marked in bold (using *word* format)
 - Second line: Corrected version (if there are mistakes)"#;
@@ -109,6 +112,10 @@ Provide your response in the following format:
 - First line: Original sentence
 - Second line: Simplified version
 - Third line: Russian translation of the simplified version"#;
+
+const CONTEXT_PROMPT: &str = r#"You are a German language expert.
+The following query is about this word/phrase: {context}
+Please answer the query in Russian, providing relevant information about the context word/phrase."#;
 
 fn get_allowed_users() -> Vec<i64> {
     let users = env::var("ALLOWED_USERS")
@@ -218,7 +225,6 @@ fn analyze_input(text: &str) -> InputType {
     } else if text.starts_with("!:") {
         InputType::GrammarCheck
     } else if text.starts_with("-:") {
-        // Add this block
         InputType::Simplify
     } else {
         let has_cyrillic = text
@@ -250,37 +256,46 @@ async fn translate_text(text: &str) -> Result<String> {
 
     let client = reqwest::Client::new();
 
-    let (system_prompt, processed_text) = match analyze_input(text) {
-        InputType::Explanation => {
-            let clean_text = text.trim_start_matches("?:").trim();
-            (EXPLANATION_PROMPT, clean_text)
-        }
-        InputType::GrammarCheck => {
-            let clean_text = text.trim_start_matches("!:").trim();
-            (GRAMMAR_CHECK_PROMPT, clean_text)
-        }
-        InputType::Freeform => {
-            let clean_text = text.trim_start_matches("??:").trim();
-            (FREEFORM_PROMPT, clean_text)
-        }
-        InputType::Simplify => {
-            let clean_text = text.trim_start_matches("-:").trim();
-            (SIMPLIFY_PROMPT, clean_text)
-        }
-        _ => {
-            let prompt = match analyze_input(text) {
-                InputType::RussianWord => RUSSIAN_WORD_PROMPT,
-                InputType::RussianSentence => RUSSIAN_TO_GERMAN_PROMPT,
-                InputType::GermanWord => GERMAN_WORD_PROMPT,
-                InputType::GermanSentence => GERMAN_SENTENCE_PROMPT,
-                InputType::Explanation
-                | InputType::GrammarCheck
-                | InputType::Freeform
-                | InputType::Simplify => {
-                    unreachable!()
-                }
-            };
-            (prompt, text)
+    let (system_prompt, processed_text) = if text.starts_with("Context: ") {
+        // Handle contextual query
+        let parts: Vec<&str> = text.splitn(2, "Query: ").collect();
+        let context = parts[0].trim_start_matches("Context: ").trim();
+        let query = parts.get(1).unwrap_or(&"").trim();
+
+        (CONTEXT_PROMPT.replace("{context}", context), query)
+    } else {
+        match analyze_input(text) {
+            InputType::Explanation => {
+                let clean_text = text.trim_start_matches("?:").trim();
+                (EXPLANATION_PROMPT.to_string(), clean_text)
+            }
+            InputType::GrammarCheck => {
+                let clean_text = text.trim_start_matches("!:").trim();
+                (GRAMMAR_CHECK_PROMPT.to_string(), clean_text)
+            }
+            InputType::Freeform => {
+                let clean_text = text.trim_start_matches("??:").trim();
+                (FREEFORM_PROMPT.to_string(), clean_text)
+            }
+            InputType::Simplify => {
+                let clean_text = text.trim_start_matches("-:").trim();
+                (SIMPLIFY_PROMPT.to_string(), clean_text)
+            }
+            _ => {
+                let prompt = match analyze_input(text) {
+                    InputType::RussianWord => RUSSIAN_WORD_PROMPT,
+                    InputType::RussianSentence => RUSSIAN_TO_GERMAN_PROMPT,
+                    InputType::GermanWord => GERMAN_WORD_PROMPT,
+                    InputType::GermanSentence => GERMAN_SENTENCE_PROMPT,
+                    InputType::Explanation
+                    | InputType::GrammarCheck
+                    | InputType::Freeform
+                    | InputType::Simplify => {
+                        unreachable!()
+                    }
+                };
+                (prompt.to_string(), text)
+            }
         }
     };
 
@@ -415,8 +430,34 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
         .await?;
         return Ok(());
     }
+
     if let Some(text) = msg.text() {
-        let claude_response = translate_text(text).await?;
+        // Check if this is a reply to a previous message
+        let context = if let Some(reply) = msg.reply_to_message() {
+            // Extract the original text from the bot's reply
+            reply.text().map(|original_text| {
+                // Extract the original word/phrase from the formatted response
+                if let Some(first_line) = original_text.lines().next() {
+                    if first_line.starts_with("➡️ ") {
+                        first_line.trim_start_matches("➡️ ").trim().to_string()
+                    } else {
+                        first_line.trim().to_string()
+                    }
+                } else {
+                    String::new()
+                }
+            })
+        } else {
+            None
+        };
+
+        let claude_response = if let Some(context) = context {
+            // If this is a reply, include the context in the prompt
+            let combined_text = format!("Context: {}\nQuery: {}", context, text);
+            translate_text(&combined_text).await?
+        } else {
+            translate_text(text).await?
+        };
 
         let response = match analyze_input(text) {
             InputType::Explanation
