@@ -235,6 +235,37 @@ struct Translation {
     examples: Vec<Example>,
 }
 
+impl Translation {
+    fn is_valid(&self) -> bool {
+        !self.original.trim().is_empty()
+            && !self.translation.trim().is_empty()
+            && self
+                .examples
+                .iter()
+                .all(|e| !e.german.trim().is_empty() && !e.russian.trim().is_empty())
+    }
+}
+
+fn add_translation(translation: Translation) -> Result<()> {
+    if !translation.is_valid() {
+        return Err("Invalid translation data".into());
+    }
+
+    let mut translations = read_translations()?;
+
+    // Remove existing translations with the same original or translation text
+    translations.retain(|t| {
+        t.original.to_lowercase() != translation.original.to_lowercase()
+            && t.translation.to_lowercase() != translation.translation.to_lowercase()
+    });
+
+    translations.push(translation);
+
+    write_translations(&translations)?;
+
+    Ok(())
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Example {
     german: String,
@@ -567,10 +598,9 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
             | InputType::Simplify => claude_response.trim().to_string(),
             InputType::GermanWord | InputType::RussianWord => {
                 let translation = parse_translation_response(text, &claude_response);
-                // Only store translations for single words
-                let mut translations = read_translations()?;
-                translations.push(translation.clone());
-                write_translations(&translations)?;
+                if let Err(e) = add_translation(translation.clone()) {
+                    log::error!("Failed to add translation: {}", e);
+                }
                 format_translation_response(&translation)
             }
             InputType::RussianSentence | InputType::GermanSentence => {
