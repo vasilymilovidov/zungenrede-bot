@@ -28,6 +28,8 @@ const WELCOME_MESSAGE: &str = r#"Доступные комманды:
 • Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
 
 Примеры:
+Wald
+Я люблю гулять
 ??: Как использовать Akkusative?
 ?: Der Mann isst einen Apfel
 !: Ich habe gestern nach Berlin gefahren
@@ -164,6 +166,8 @@ const HELP_MESSAGE: &str = r#"Доступные комманды:
 • Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
 
 Примеры:
+Wald
+Я люблю гулять
 ??: Как использовать Akkusative?
 ?: Der Mann isst einen Apfel
 !: Ich habe gestern nach Berlin gefahren
