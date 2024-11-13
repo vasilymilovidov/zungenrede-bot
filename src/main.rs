@@ -12,7 +12,7 @@ const WELCOME_MESSAGE: &str = r#"Доступные комманды:
 /help - Показать это сообщение
 /export - Экспортировать базу данных переводов
 /clear - Очистить базу данных переводов
-/practice - Начать пратику
+/practice - Начать практику
 /stop - Остановить практику
 /exit - Остановить бота
 
@@ -28,7 +28,7 @@ const WELCOME_MESSAGE: &str = r#"Доступные комманды:
 • Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
 
 Примеры:
-??: Как использоваь Akkusative?
+??: Как использовать Akkusative?
 ?: Der Mann isst einen Apfel
 !: Ich habe gestern nach Berlin gefahren
 -: Ich würde gerne wissen, ob Sie morgen Zeit haben
@@ -148,7 +148,7 @@ const HELP_MESSAGE: &str = r#"Доступные комманды:
 /help - Показать это сообщение
 /export - Экспортировать базу данных переводов
 /clear - Очистить базу данных переводов
-/practice - Начать пратику
+/practice - Начать практику
 /stop - Остановить практику
 /exit - Остановить бота
 
@@ -164,7 +164,7 @@ const HELP_MESSAGE: &str = r#"Доступные комманды:
 • Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
 
 Примеры:
-??: Как использоваь Akkusative?
+??: Как использовать Akkusative?
 ?: Der Mann isst einen Apfel
 !: Ich habe gestern nach Berlin gefahren
 -: Ich würde gerne wissen, ob Sie morgen Zeit haben
