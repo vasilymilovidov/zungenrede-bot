@@ -353,7 +353,12 @@ async fn check_practice_answer(
         let answer = msg.text().unwrap_or("").trim().to_lowercase();
         let correct = if session.expecting_russian {
             // When expecting Russian, compare with translation
-            session.current_word.translation.to_lowercase() == answer
+            session
+                .current_word
+                .translation
+                .to_lowercase()
+                .split_whitespace()
+                .any(|word| word == answer)
         } else {
             // When expecting German, check if it's a noun
             if let Some(first_form) = session.current_word.grammar_forms.first() {
@@ -362,10 +367,20 @@ async fn check_practice_answer(
                         format!("{} {}", first_form, session.current_word.original).to_lowercase();
                     answer == expected
                 } else {
-                    session.current_word.original.to_lowercase() == answer
+                    session
+                        .current_word
+                        .original
+                        .to_lowercase()
+                        .split_whitespace()
+                        .any(|word| word == answer)
                 }
             } else {
-                session.current_word.original.to_lowercase() == answer
+                session
+                    .current_word
+                    .original
+                    .to_lowercase()
+                    .split_whitespace()
+                    .any(|word| word == answer)
             }
         };
 
