@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{env, fs};
-use teloxide::{macros::BotCommands, prelude::*};
+use teloxide::{macros::BotCommands, prelude::*, types::InputFile};
 use tokio::sync::broadcast;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -197,12 +197,15 @@ struct Example {
     rename_rule = "lowercase",
     description = "These commands are supported:"
 )]
-
 enum Command {
     #[command(description = "start the bot")]
     Start,
     #[command(description = "shutdown the bot")]
     Exit,
+    #[command(description = "export translations database")]
+    Export,
+    #[command(description = "clear translations database")]
+    Clear,
 }
 
 #[derive(Debug)]
@@ -348,6 +351,19 @@ fn write_translations(translations: &[Translation]) -> Result<()> {
     Ok(())
 }
 
+fn find_translation<'a>(word: &str, translations: &'a [Translation]) -> Option<&'a Translation> {
+    translations.iter().find(|t| {
+        t.original.to_lowercase() == word.to_lowercase()
+            || t.translation.to_lowercase() == word.to_lowercase()
+    })
+}
+
+fn clear_translations() -> Result<()> {
+    let path = get_storage_path();
+    fs::write(&path, "[]")?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
@@ -417,6 +433,24 @@ async fn handle_command(
             bot.send_message(msg.chat.id, SHUTDOWN_MESSAGE).await?;
             shutdown.send(()).ok();
         }
+        Command::Export => {
+            let translations = read_translations()?;
+            let file_path = get_storage_path();
+
+            // Send the file
+            let input_file = InputFile::file(file_path);
+            bot.send_document(msg.chat.id, input_file)
+                .caption(format!(
+                    "Translation database with {} entries",
+                    translations.len()
+                ))
+                .await?;
+        }
+        Command::Clear => {
+            clear_translations()?;
+            bot.send_message(msg.chat.id, "Translations database has been cleared.")
+                .await?;
+        }
     }
     Ok(())
 }
@@ -432,11 +466,21 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
     }
 
     if let Some(text) = msg.text() {
-        // Check if this is a reply to a previous message
+        let input_type = analyze_input(text);
+
+        // Check local database first for single words
+        if matches!(input_type, InputType::GermanWord | InputType::RussianWord) {
+            let translations = read_translations()?;
+            if let Some(existing_translation) = find_translation(text, &translations) {
+                let response = format_translation_response(existing_translation);
+                bot.send_message(msg.chat.id, response).await?;
+                return Ok(());
+            }
+        }
+
+        // Continue with existing logic for API calls
         let context = if let Some(reply) = msg.reply_to_message() {
-            // Extract the original text from the bot's reply
             reply.text().map(|original_text| {
-                // Extract the original word/phrase from the formatted response
                 if let Some(first_line) = original_text.lines().next() {
                     if first_line.starts_with("➡️ ") {
                         first_line.trim_start_matches("➡️ ").trim().to_string()
@@ -452,26 +496,27 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
         };
 
         let claude_response = if let Some(context) = context {
-            // If this is a reply, include the context in the prompt
             let combined_text = format!("Context: {}\nQuery: {}", context, text);
             translate_text(&combined_text).await?
         } else {
             translate_text(text).await?
         };
 
-        let response = match analyze_input(text) {
+        let response = match input_type {
             InputType::Explanation
             | InputType::GrammarCheck
             | InputType::Freeform
             | InputType::Simplify => claude_response.trim().to_string(),
             InputType::GermanWord | InputType::RussianWord => {
                 let translation = parse_translation_response(text, &claude_response);
+                // Only store translations for single words
                 let mut translations = read_translations()?;
                 translations.push(translation.clone());
                 write_translations(&translations)?;
                 format_translation_response(&translation)
             }
             InputType::RussianSentence | InputType::GermanSentence => {
+                // Don't store sentence translations
                 format!("{} ➜ {}", text, claude_response.trim())
             }
         };
