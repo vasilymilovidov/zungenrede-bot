@@ -1,14 +1,25 @@
-FROM rust:1.75-slim as builder
+# Use Debian as base image
+FROM debian:bookworm-slim as builder
 
-# Install required dependencies
+# Install Rust and required dependencies
 RUN apt-get update && \
-    apt-get install -y pkg-config libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust using rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
 COPY . .
 RUN cargo build --release
 
+# Runtime stage
 FROM debian:bookworm-slim
 
 # Install runtime dependencies
