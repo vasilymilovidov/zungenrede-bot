@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::{env, fs};
+use std::{collections::HashMap, env, fs, sync::Arc};
 use teloxide::{macros::BotCommands, prelude::*, types::InputFile};
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, Mutex};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+type PracticeSessions = Arc<Mutex<HashMap<i64, PracticeSession>>>;
 
 // Constants
 const WELCOME_MESSAGE: &str = r#"Доступные комманды:
@@ -266,6 +267,173 @@ fn add_translation(translation: Translation) -> Result<()> {
     Ok(())
 }
 
+#[derive(Clone)]
+struct PracticeSession {
+    current_word: Translation,
+    expecting_russian: bool,
+}
+
+fn get_random_translation(translations: &[Translation]) -> Option<Translation> {
+    use rand::seq::SliceRandom;
+    translations.choose(&mut rand::thread_rng()).cloned()
+}
+
+async fn start_practice_session(
+    bot: &Bot,
+    msg: &Message,
+    sessions: &PracticeSessions,
+) -> Result<()> {
+    let translations = read_translations()?;
+    if translations.is_empty() {
+        bot.send_message(msg.chat.id, "No words in the database to practice with!")
+            .await?;
+        return Ok(());
+    }
+
+    let translation =
+        get_random_translation(&translations).ok_or("Failed to get random translation")?;
+
+    let expecting_russian = rand::random::<bool>();
+    let question = if expecting_russian {
+        // When expecting Russian, show German word (original)
+        format!("Переведите на русский:\n👅{}", translation.original)
+    } else {
+        // When expecting German, show Russian word (translation)
+        if let Some(first_form) = translation.grammar_forms.first() {
+            if ["der", "die", "das"].contains(&first_form.trim()) {
+                format!(
+                    "Переведите на немецкий (не забудьте артикль!):\n👅{}",
+                    translation.translation
+                )
+            } else {
+                format!("Переведите на немецкий:\n👅{}", translation.translation)
+            }
+        } else {
+            format!("Переведите на немецкий:\n👅{}", translation.translation)
+        }
+    };
+
+    let mut sessions = sessions.lock().await;
+    sessions.insert(
+        msg.chat.id.0,
+        PracticeSession {
+            current_word: translation,
+            expecting_russian,
+        },
+    );
+
+    bot.send_message(
+        msg.chat.id,
+        "Practice mode started! Use /stop to end practice.",
+    )
+    .await?;
+    bot.send_message(msg.chat.id, question).await?;
+
+    Ok(())
+}
+
+async fn check_practice_answer(
+    bot: &Bot,
+    msg: &Message,
+    sessions: &PracticeSessions,
+) -> Result<()> {
+    let mut sessions = sessions.lock().await;
+
+    if let Some(session) = sessions.get(&msg.chat.id.0) {
+        let answer = msg.text().unwrap_or("").trim().to_lowercase();
+        let correct = if session.expecting_russian {
+            // When expecting Russian, compare with translation
+            session.current_word.translation.to_lowercase() == answer
+        } else {
+            // When expecting German, check if it's a noun
+            if let Some(first_form) = session.current_word.grammar_forms.first() {
+                if ["der", "die", "das"].contains(&first_form.trim()) {
+                    let expected =
+                        format!("{} {}", first_form, session.current_word.original).to_lowercase();
+                    answer == expected
+                } else {
+                    session.current_word.original.to_lowercase() == answer
+                }
+            } else {
+                session.current_word.original.to_lowercase() == answer
+            }
+        };
+
+        let response = if correct {
+            "✅ Правильно!".to_string()
+        } else {
+            let correct_answer = if session.expecting_russian {
+                session.current_word.translation.clone()
+            } else if let Some(first_form) = session.current_word.grammar_forms.first() {
+                if ["der", "die", "das"].contains(&first_form.trim()) {
+                    format!("{} {}", first_form, session.current_word.original)
+                } else {
+                    session.current_word.original.clone()
+                }
+            } else {
+                session.current_word.original.clone()
+            };
+            format!("❌ Неправильно! Правильный ответ: {}", correct_answer)
+        };
+
+        bot.send_message(msg.chat.id, response).await?;
+
+        // Send next word
+        let translations = read_translations()?;
+        if let Some(next_translation) = get_random_translation(&translations) {
+            let expecting_russian = rand::random::<bool>();
+            let question = if expecting_russian {
+                // When expecting Russian, show German word (original)
+                format!("Переведите на русский:\n👅{}", next_translation.original)
+            } else {
+                // When expecting German, show Russian word (translation)
+                if let Some(first_form) = next_translation.grammar_forms.first() {
+                    if ["der", "die", "das"].contains(&first_form.trim()) {
+                        format!(
+                            "Переведите на немецкий (не забудьте артикль!):\n👅{}",
+                            next_translation.translation
+                        )
+                    } else {
+                        format!(
+                            "Переведите на немецкий:\n👅{}",
+                            next_translation.translation
+                        )
+                    }
+                } else {
+                    format!(
+                        "Переведите на немецкий:\n👅{}",
+                        next_translation.translation
+                    )
+                }
+            };
+
+            sessions.insert(
+                msg.chat.id.0,
+                PracticeSession {
+                    current_word: next_translation,
+                    expecting_russian,
+                },
+            );
+
+            bot.send_message(msg.chat.id, question).await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn stop_practice_session(
+    bot: &Bot,
+    msg: &Message,
+    sessions: &PracticeSessions,
+) -> Result<()> {
+    let mut sessions = sessions.lock().await;
+    sessions.remove(&msg.chat.id.0);
+    bot.send_message(msg.chat.id, "Practice mode stopped!")
+        .await?;
+    Ok(())
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Example {
     german: String,
@@ -288,6 +456,10 @@ enum Command {
     Export,
     #[command(description = "clear translations database")]
     Clear,
+    #[command(description = "start practice mode")]
+    Practice,
+    #[command(description = "stop practice mode")]
+    Stop,
 }
 
 #[derive(Debug)]
@@ -457,15 +629,18 @@ async fn main() {
 
     let bot = Bot::from_env();
     let (shutdown_tx, _) = broadcast::channel(1);
+    let sessions: PracticeSessions = Arc::new(Mutex::new(HashMap::new()));
 
     let shutdown_tx_clone = shutdown_tx.clone();
+    let sessions_clone = sessions.clone();
 
     let message_handler = Update::filter_message()
         .branch(dptree::entry().filter_command::<Command>().endpoint(
             move |bot: Bot, msg: Message, cmd: Command| {
                 let shutdown = shutdown_tx_clone.clone();
+                let sessions = sessions_clone.clone();
                 async move {
-                    if let Err(e) = handle_command(&bot, &msg, cmd, &shutdown).await {
+                    if let Err(e) = handle_command(&bot, &msg, cmd, &shutdown, &sessions).await {
                         log::error!("Error: {:?}", e);
                     }
                     ResponseResult::Ok(())
@@ -474,11 +649,14 @@ async fn main() {
         ))
         .branch(
             dptree::filter(|msg: Message| msg.text().is_some()).endpoint(
-                move |bot: Bot, msg: Message| async move {
-                    if let Err(e) = handle_message(&bot, &msg).await {
-                        log::error!("Error: {:?}", e);
+                move |bot: Bot, msg: Message| {
+                    let sessions = sessions.clone();
+                    async move {
+                        if let Err(e) = handle_message(&bot, &msg, &sessions).await {
+                            log::error!("Error: {:?}", e);
+                        }
+                        ResponseResult::Ok(())
                     }
-                    ResponseResult::Ok(())
                 },
             ),
         );
@@ -502,6 +680,7 @@ async fn handle_command(
     msg: &Message,
     cmd: Command,
     shutdown: &broadcast::Sender<()>,
+    sessions: &PracticeSessions,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -512,6 +691,12 @@ async fn handle_command(
         return Ok(());
     }
     match cmd {
+        Command::Practice => {
+            start_practice_session(bot, msg, sessions).await?;
+        }
+        Command::Stop => {
+            stop_practice_session(bot, msg, sessions).await?;
+        }
         Command::Start => {
             bot.send_message(msg.chat.id, WELCOME_MESSAGE).await?;
         }
@@ -526,7 +711,6 @@ async fn handle_command(
             let translations = read_translations()?;
             let file_path = get_storage_path();
 
-            // Send the file
             let input_file = InputFile::file(file_path);
             bot.send_document(msg.chat.id, input_file)
                 .caption(format!(
@@ -544,7 +728,7 @@ async fn handle_command(
     Ok(())
 }
 
-async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
+async fn handle_message(bot: &Bot, msg: &Message, sessions: &PracticeSessions) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
             msg.chat.id,
@@ -555,74 +739,96 @@ async fn handle_message(bot: &Bot, msg: &Message) -> Result<()> {
     }
 
     if let Some(text) = msg.text() {
-        let input_type = analyze_input(text);
+        // Check if user is in practice mode
+        let is_practicing = sessions.lock().await.contains_key(&msg.chat.id.0);
 
-        // Check local database first for single words
-        if matches!(input_type, InputType::GermanWord | InputType::RussianWord) {
-            let translations = read_translations()?;
-            if let Some(existing_translation) = find_translation(text, &translations) {
-                let response = format_translation_response(existing_translation);
-                bot.send_message(msg.chat.id, response).await?;
-                return Ok(());
+        if is_practicing {
+            check_practice_answer(bot, msg, sessions).await?;
+        } else {
+            let input_type = analyze_input(text);
+
+            // Check local database first for single words
+            if matches!(input_type, InputType::GermanWord | InputType::RussianWord) {
+                let translations = read_translations()?;
+                if let Some(existing_translation) = find_translation(text, &translations) {
+                    let response = format_translation_response(existing_translation);
+                    bot.send_message(msg.chat.id, response).await?;
+                    return Ok(());
+                }
             }
-        }
 
-        // Continue with existing logic for API calls
-        let context = if let Some(reply) = msg.reply_to_message() {
-            reply.text().map(|original_text| {
-                if let Some(first_line) = original_text.lines().next() {
-                    if first_line.starts_with("➡️ ") {
-                        first_line.trim_start_matches("➡️ ").trim().to_string()
+            // Continue with existing logic for API calls
+            let context = if let Some(reply) = msg.reply_to_message() {
+                reply.text().map(|original_text| {
+                    if let Some(first_line) = original_text.lines().next() {
+                        if first_line.starts_with("➡️ ") {
+                            first_line.trim_start_matches("➡️ ").trim().to_string()
+                        } else {
+                            first_line.trim().to_string()
+                        }
                     } else {
-                        first_line.trim().to_string()
+                        String::new()
                     }
-                } else {
-                    String::new()
+                })
+            } else {
+                None
+            };
+
+            let claude_response = if let Some(context) = context {
+                let combined_text = format!("Context: {}\nQuery: {}", context, text);
+                translate_text(&combined_text).await?
+            } else {
+                translate_text(text).await?
+            };
+
+            let response = match input_type {
+                InputType::Explanation
+                | InputType::GrammarCheck
+                | InputType::Freeform
+                | InputType::Simplify => claude_response.trim().to_string(),
+                InputType::GermanWord | InputType::RussianWord => {
+                    let translation = parse_translation_response(text, &claude_response);
+                    if let Err(e) = add_translation(translation.clone()) {
+                        log::error!("Failed to add translation: {}", e);
+                    }
+                    format_translation_response(&translation)
                 }
-            })
-        } else {
-            None
-        };
-
-        let claude_response = if let Some(context) = context {
-            let combined_text = format!("Context: {}\nQuery: {}", context, text);
-            translate_text(&combined_text).await?
-        } else {
-            translate_text(text).await?
-        };
-
-        let response = match input_type {
-            InputType::Explanation
-            | InputType::GrammarCheck
-            | InputType::Freeform
-            | InputType::Simplify => claude_response.trim().to_string(),
-            InputType::GermanWord | InputType::RussianWord => {
-                let translation = parse_translation_response(text, &claude_response);
-                if let Err(e) = add_translation(translation.clone()) {
-                    log::error!("Failed to add translation: {}", e);
+                InputType::RussianSentence | InputType::GermanSentence => {
+                    // Don't store sentence translations
+                    format!("{} ➜ {}", text, claude_response.trim())
                 }
-                format_translation_response(&translation)
-            }
-            InputType::RussianSentence | InputType::GermanSentence => {
-                // Don't store sentence translations
-                format!("{} ➜ {}", text, claude_response.trim())
-            }
-        };
+            };
 
-        bot.send_message(msg.chat.id, response).await?;
+            bot.send_message(msg.chat.id, response).await?;
+        }
     }
     Ok(())
 }
 
 fn parse_translation_response(original: &str, response: &str) -> Translation {
     let lines: Vec<&str> = response.lines().collect();
+    let is_russian_input = original
+        .chars()
+        .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
 
-    let mut translation = Translation {
-        original: lines.first().unwrap_or(&original).trim().to_string(),
-        translation: lines.get(1).unwrap_or(&"").trim().to_string(),
-        grammar_forms: Vec::new(),
-        conjugations: None,
-        examples: Vec::new(),
+    let mut translation = if is_russian_input {
+        // For Russian input, swap original and translation
+        Translation {
+            original: lines.get(1).unwrap_or(&"").trim().to_string(), // German word
+            translation: lines.first().unwrap_or(&original).trim().to_string(), // Russian word
+            grammar_forms: Vec::new(),
+            conjugations: None,
+            examples: Vec::new(),
+        }
+    } else {
+        // For German input, keep as is
+        Translation {
+            original: lines.first().unwrap_or(&original).trim().to_string(), // German word
+            translation: lines.get(1).unwrap_or(&"").trim().to_string(),     // Russian word
+            grammar_forms: Vec::new(),
+            conjugations: None,
+            examples: Vec::new(),
+        }
     };
 
     if lines.len() > 2 {
@@ -669,7 +875,14 @@ fn parse_translation_response(original: &str, response: &str) -> Translation {
                         .to_string();
                     let russian = russian_parts.join("-").trim().to_string();
 
-                    translation.examples.push(Example { german, russian });
+                    if is_russian_input {
+                        translation.examples.push(Example {
+                            german: russian,
+                            russian: german,
+                        });
+                    } else {
+                        translation.examples.push(Example { german, russian });
+                    }
                 }
             }
             current_line += 1;
