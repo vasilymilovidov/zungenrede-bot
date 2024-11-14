@@ -22,13 +22,19 @@ impl AnswerCheck {
     fn format_message(&self) -> String {
         match &self.result {
             AnswerResult::Correct => "✅ Правильно!".to_string(),
-            AnswerResult::AlmostCorrect { expected, similarity } => {
-                format!("⚠️ Почти правильно! Ожидалось: {}\nПохожесть: {:.0}%", 
-                    expected, similarity * 100.0)
-            },
+            AnswerResult::AlmostCorrect {
+                expected,
+                similarity,
+            } => {
+                format!(
+                    "⚠️ Почти правильно! Ожидалось: {}\nПохожесть: {:.0}%",
+                    expected,
+                    similarity * 100.0
+                )
+            }
             AnswerResult::WrongArticle { expected } => {
                 format!("❌ Неправильный артикль! Правильный ответ: {}", expected)
-            },
+            }
             AnswerResult::Wrong { expected } => {
                 format!("❌ Неправильно! Правильный ответ: {}", expected)
             }
@@ -65,7 +71,20 @@ pub async fn start_practice_session(
     let expecting_russian = rand::random::<bool>();
     let question = if expecting_russian {
         // When expecting Russian, show German word (original)
-        format!("Переведите на русский:\n👅{}", translation.original)
+        if let Some(first_form) = translation.grammar_forms.first() {
+            if ["der", "die", "das"].contains(&first_form.trim()) {
+                // For nouns, include the article
+                format!(
+                    "Переведите на русский:\n👅{} {}",
+                    first_form.trim(),
+                    translation.original
+                )
+            } else {
+                format!("Переведите на русский:\n👅{}", translation.original)
+            }
+        } else {
+            format!("Переведите на русский:\n👅{}", translation.original)
+        }
     } else {
         // When expecting German, show Russian word (translation)
         if let Some(first_form) = translation.grammar_forms.first() {
@@ -103,7 +122,7 @@ pub async fn start_practice_session(
 
 fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool) -> AnswerCheck {
     let answer = answer.trim().to_lowercase();
-    
+
     // Helper function to check string similarity
     fn is_similar(a: &str, b: &str) -> f64 {
         let similarity = jaro_winkler(a, b);
@@ -118,74 +137,75 @@ fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool
             .filter(|c| c.is_alphabetic() || c.is_whitespace())
             .collect()
     }
-    
-    if expecting_russian {
-           let expected = normalize(&translation.translation);
-           let answer = normalize(&answer);
-   
-           // Split expected answer into individual variants by comma
-           let expected_variants: Vec<String> = translation.translation
-               .split(',')
-               .map(normalize)
-               .collect();
-   
-           if expected_variants.contains(&answer) {
-               return AnswerCheck {
-                   result: AnswerResult::Correct,
-                   feedback: "".to_string(),
-               };
-           }
-   
-           if answer == expected {
-               return AnswerCheck {
-                   result: AnswerResult::Correct,
-                   feedback: "".to_string(),
-               };
-           }
-   
-           let mut correct_variants = expected_variants;
-           
-           correct_variants.extend(translation.examples.iter()
-               .map(|ex| normalize(&ex.russian)));
-   
-           // Check for similar answers
-           let best_match = correct_variants.iter()
-               .map(|variant| is_similar(&answer, variant))
-               .max_by(|a, b| a.partial_cmp(b).unwrap())
-               .unwrap_or(0.0);
-   
-           if best_match > 0.85 {
-               return AnswerCheck {
-                   result: AnswerResult::AlmostCorrect {
-                       expected: translation.translation.clone(),
-                       similarity: best_match,
-                   },
-                   feedback: "".to_string(),
-               };
-           }
-   
-           return AnswerCheck {
-               result: AnswerResult::Wrong {
-                   expected: translation.translation.clone(),
-               },
-               feedback: "".to_string(),
-           };
 
+    if expecting_russian {
+        let expected = normalize(&translation.translation);
+        let answer = normalize(&answer);
+
+        // Split expected answer into individual variants by comma
+        let expected_variants: Vec<String> =
+            translation.translation.split(',').map(normalize).collect();
+
+        if expected_variants.contains(&answer) {
+            return AnswerCheck {
+                result: AnswerResult::Correct,
+                feedback: "".to_string(),
+            };
+        }
+
+        if answer == expected {
+            return AnswerCheck {
+                result: AnswerResult::Correct,
+                feedback: "".to_string(),
+            };
+        }
+
+        let mut correct_variants = expected_variants;
+
+        correct_variants.extend(translation.examples.iter().map(|ex| normalize(&ex.russian)));
+
+        // Check for similar answers
+        let best_match = correct_variants
+            .iter()
+            .map(|variant| is_similar(&answer, variant))
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or(0.0);
+
+        if best_match > 0.85 {
+            return AnswerCheck {
+                result: AnswerResult::AlmostCorrect {
+                    expected: translation.translation.clone(),
+                    similarity: best_match,
+                },
+                feedback: "".to_string(),
+            };
+        }
+
+        return AnswerCheck {
+            result: AnswerResult::Wrong {
+                expected: translation.translation.clone(),
+            },
+            feedback: "".to_string(),
+        };
     } else {
         // Handling German answers
-        let is_noun = translation.grammar_forms.first()
+        let is_noun = translation
+            .grammar_forms
+            .first()
             .map(|form| ["der", "die", "das"].contains(&form.trim()))
             .unwrap_or(false);
 
         if is_noun {
-            let expected_article = translation.grammar_forms.first()
+            let expected_article = translation
+                .grammar_forms
+                .first()
                 .map(|a| a.trim().to_lowercase())
                 .unwrap_or_default();
             let expected_noun = normalize(&translation.original);
             let expected = format!("{} {}", expected_article, expected_noun);
 
             let answer_parts: Vec<&str> = answer.split_whitespace().collect();
-            
+
             match answer_parts.as_slice() {
                 [article, noun, ..] => {
                     let article = article.to_lowercase();
@@ -214,10 +234,12 @@ fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool
                         };
                     }
                 }
-                _ => return AnswerCheck {
-                    result: AnswerResult::Wrong { expected },
-                    feedback: "Не забудьте указать артикль!".to_string(),
-                },
+                _ => {
+                    return AnswerCheck {
+                        result: AnswerResult::Wrong { expected },
+                        feedback: "Не забудьте указать артикль!".to_string(),
+                    }
+                }
             }
         } else {
             // Non-noun German words
@@ -227,15 +249,22 @@ fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool
             // Get possible variations including conjugations
             let mut correct_variants = vec![expected.clone()];
             if let Some(conjugations) = &translation.conjugations {
-                correct_variants.extend(conjugations.iter()
-                    .filter_map(|conj| conj.split_whitespace().last())
-                    .map(normalize));
+                correct_variants.extend(
+                    conjugations
+                        .iter()
+                        .filter_map(|conj| conj.split_whitespace().last())
+                        .map(normalize),
+                );
             }
 
             // Add examples
-            correct_variants.extend(translation.examples.iter()
-                .flat_map(|ex| ex.german.split_whitespace())
-                .map(normalize));
+            correct_variants.extend(
+                translation
+                    .examples
+                    .iter()
+                    .flat_map(|ex| ex.german.split_whitespace())
+                    .map(normalize),
+            );
 
             // Check for exact matches
             if correct_variants.contains(&answer) {
@@ -246,7 +275,8 @@ fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool
             }
 
             // Check for similar answers
-            let best_match = correct_variants.iter()
+            let best_match = correct_variants
+                .iter()
                 .map(|variant| is_similar(&answer, variant))
                 .max_by(|a, b| a.partial_cmp(b).unwrap())
                 .unwrap_or(0.0);
@@ -280,11 +310,7 @@ pub async fn check_practice_answer(
 
     if let Some(session) = sessions.get(&msg.chat.id.0) {
         let answer = msg.text().unwrap_or("").trim();
-        let check_result = check_answer(
-            answer,
-            &session.current_word,
-            session.expecting_russian,
-        );
+        let check_result = check_answer(answer, &session.current_word, session.expecting_russian);
 
         let mut response = check_result.format_message();
         if !check_result.feedback.is_empty() {
@@ -300,7 +326,19 @@ pub async fn check_practice_answer(
             if let Some(next_translation) = get_random_translation(&translations) {
                 let expecting_russian = rand::random::<bool>();
                 let question = if expecting_russian {
-                    format!("Переведите на русский:\n👅{}", next_translation.original)
+                    if let Some(first_form) = next_translation.grammar_forms.first() {
+                        if ["der", "die", "das"].contains(&first_form.trim()) {
+                            format!(
+                                "Переведите на русский:\n👅{} {}",
+                                first_form.trim(),
+                                next_translation.original
+                            )
+                        } else {
+                            format!("Переведите на русский:\n👅{}", next_translation.original)
+                        }
+                    } else {
+                        format!("Переведите на русский:\n👅{}", next_translation.original)
+                    }
                 } else {
                     if let Some(first_form) = next_translation.grammar_forms.first() {
                         if ["der", "die", "das"].contains(&first_form.trim()) {
@@ -337,7 +375,6 @@ pub async fn check_practice_answer(
 
     Ok(())
 }
-
 
 pub async fn stop_practice_session(
     bot: &Bot,
