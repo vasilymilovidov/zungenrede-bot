@@ -198,6 +198,19 @@ pub fn clear_translations() -> Result<()> {
     Ok(())
 }
 
+pub fn delete_translation(word: &str) -> Result<bool> {
+    let mut translations = read_translations()?;
+    let initial_len = translations.len();
+
+    translations.retain(|t| {
+        t.original.to_lowercase() != word.to_lowercase()
+            && t.translation.to_lowercase() != word.to_lowercase()
+    });
+
+    write_translations(&translations)?;
+    Ok(initial_len != translations.len())
+}
+
 pub fn parse_translation_response(original: &str, response: &str) -> Translation {
     let lines: Vec<&str> = response.lines().collect();
     let is_russian_input = original

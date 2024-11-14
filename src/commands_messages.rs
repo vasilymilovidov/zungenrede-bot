@@ -1,4 +1,4 @@
-use std::env;
+use std::{collections::HashSet, env, sync::Arc};
 
 use teloxide::{
     macros::BotCommands,
@@ -10,12 +10,17 @@ use teloxide::{
 use tokio::sync::broadcast;
 
 use crate::{
-    input::{analyze_input, InputType}, practice::{check_practice_answer, start_practice_session, stop_practice_session}, promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE}, translation::{
-        add_translation, clear_translations, find_translation, format_translation_response, get_storage_path, parse_translation_response, read_translations, translate_text
-    }, PracticeSessions
+    input::{analyze_input, InputType},
+    practice::{check_practice_answer, start_practice_session, stop_practice_session},
+    promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE},
+    translation::{
+        add_translation, clear_translations, delete_translation, find_translation, format_translation_response, get_storage_path, parse_translation_response, read_translations, translate_text
+    },
+    PracticeSessions,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+pub type DeleteMode = Arc<tokio::sync::Mutex<HashSet<i64>>>;
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -37,6 +42,10 @@ pub enum Command {
     Practice,
     #[command(description = "stop practice mode")]
     Stop,
+    #[command(description = "enter delete mode")]
+    Delete,
+    #[command(description = "exit delete mode")]
+    StopDelete,
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -80,6 +89,7 @@ pub async fn handle_command(
     cmd: Command,
     shutdown: &broadcast::Sender<()>,
     sessions: &PracticeSessions,
+    delete_mode: &DeleteMode,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -123,11 +133,31 @@ pub async fn handle_command(
             bot.send_message(msg.chat.id, "Translations database has been cleared.")
                 .await?;
         }
+        Command::Delete => {
+            let mut delete_mode = delete_mode.lock().await;
+            delete_mode.insert(msg.chat.id.0);
+            bot.send_message(
+                       msg.chat.id,
+                       "Delete mode activated. Send any word to delete it from the database. Use /stopdelete to exit delete mode.",
+                   )
+                   .await?;
+        }
+        Command::StopDelete => {
+            let mut delete_mode = delete_mode.lock().await;
+            delete_mode.remove(&msg.chat.id.0);
+            bot.send_message(msg.chat.id, "Delete mode deactivated.")
+                .await?;
+        }
     }
     Ok(())
 }
 
-pub async fn handle_message(bot: &Bot, msg: &Message, sessions: &PracticeSessions) -> Result<()> {
+pub async fn handle_message(
+    bot: &Bot,
+    msg: &Message,
+    sessions: &PracticeSessions,
+    delete_mode: &DeleteMode,
+) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
             msg.chat.id,
@@ -141,8 +171,25 @@ pub async fn handle_message(bot: &Bot, msg: &Message, sessions: &PracticeSession
         // Check if user is in practice mode
         let is_practicing = sessions.lock().await.contains_key(&msg.chat.id.0);
 
+        let is_deleting = delete_mode.lock().await.contains(&msg.chat.id.0);
+
         if is_practicing {
             check_practice_answer(bot, msg, sessions).await?;
+        } else if is_deleting {
+            match delete_translation(text) {
+                Ok(true) => {
+                    bot.send_message(msg.chat.id, "✅ Word deleted successfully.")
+                        .await?;
+                }
+                Ok(false) => {
+                    bot.send_message(msg.chat.id, "❌ Word not found in database.")
+                        .await?;
+                }
+                Err(e) => {
+                    bot.send_message(msg.chat.id, format!("❌ Error deleting word: {}", e))
+                        .await?;
+                }
+            }
         } else {
             let input_type = analyze_input(text);
 
