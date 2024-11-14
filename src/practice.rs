@@ -66,7 +66,7 @@ pub async fn start_practice_session(
     }
 
     let translation =
-        get_random_translation(&translations).ok_or("Failed to get random translation")?;
+        get_weighted_translation(&translations).ok_or("Failed to get weighted translation")?;
 
     let expecting_russian = rand::random::<bool>();
     let question = if expecting_russian {
@@ -316,6 +316,15 @@ pub async fn check_practice_answer(
         if !check_result.feedback.is_empty() {
             response.push_str(&format!("\n{}", check_result.feedback));
         }
+
+        let word_to_update = if session.expecting_russian {
+            &session.current_word.original
+        } else {
+            &session.current_word.translation
+        };
+
+        let is_correct = matches!(check_result.result, AnswerResult::Correct);
+        update_translation_stats(word_to_update, is_correct)?;
 
         bot.send_message(msg.chat.id, response).await?;
 

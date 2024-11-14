@@ -45,6 +45,10 @@ pub struct Translation {
     pub grammar_forms: Vec<String>,
     pub conjugations: Option<Vec<String>>,
     pub examples: Vec<Example>,
+    #[serde(default)]
+    pub correct_answers: u32,
+    #[serde(default)]
+    pub wrong_answers: u32,
 }
 
 impl Translation {
@@ -62,6 +66,62 @@ impl Translation {
 pub struct Example {
     pub german: String,
     pub russian: String,
+}
+
+pub fn update_translation_stats(word: &str, correct: bool) -> Result<()> {
+    let mut translations = read_translations()?;
+
+    if let Some(translation) = translations.iter_mut().find(|t| {
+        t.original.to_lowercase() == word.to_lowercase()
+            || t.translation.to_lowercase() == word.to_lowercase()
+    }) {
+        if correct {
+            translation.correct_answers += 1;
+        } else {
+            translation.wrong_answers += 1;
+        }
+
+        write_translations(&translations)?;
+    }
+
+    Ok(())
+}
+
+pub fn get_weighted_translation(translations: &[Translation]) -> Option<Translation> {
+    use rand::Rng;
+
+    if translations.is_empty() {
+        return None;
+    }
+
+    // Calculate weights based on error rate
+    let weights: Vec<f64> = translations
+        .iter()
+        .map(|t| {
+            let total = t.correct_answers + t.wrong_answers;
+            if total == 0 {
+                // New words get higher weight to ensure they're practiced
+                2.0
+            } else {
+                // Calculate error rate and add 1 to ensure all words have a chance
+                1.0 + (t.wrong_answers as f64 / total as f64)
+            }
+        })
+        .collect();
+
+    let total_weight: f64 = weights.iter().sum();
+    let mut rng = rand::thread_rng();
+    let mut random_value = rng.gen::<f64>() * total_weight;
+
+    for (i, weight) in weights.iter().enumerate() {
+        random_value -= weight;
+        if random_value <= 0.0 {
+            return Some(translations[i].clone());
+        }
+    }
+
+    // Fallback to first translation if something goes wrong
+    Some(translations[0].clone())
 }
 
 pub async fn translate_text(text: &str) -> Result<String> {
@@ -200,11 +260,11 @@ pub fn clear_translations() -> Result<()> {
 
 pub fn import_translations(json_data: &str) -> Result<usize> {
     let translations: Vec<Translation> = serde_json::from_str(json_data)?;
-    
+
     if !translations.iter().all(|t| t.is_valid()) {
         return Err("Invalid translation data in import file".into());
     }
-    
+
     write_translations(&translations)?;
     Ok(translations.len())
 }
@@ -235,6 +295,8 @@ pub fn parse_translation_response(original: &str, response: &str) -> Translation
             grammar_forms: Vec::new(),
             conjugations: None,
             examples: Vec::new(),
+            correct_answers: 0,
+            wrong_answers: 0,
         }
     } else {
         Translation {
@@ -243,6 +305,8 @@ pub fn parse_translation_response(original: &str, response: &str) -> Translation
             grammar_forms: Vec::new(),
             conjugations: None,
             examples: Vec::new(),
+            correct_answers: 0,
+            wrong_answers: 0,
         }
     };
 

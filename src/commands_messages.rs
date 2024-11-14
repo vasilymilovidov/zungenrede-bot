@@ -51,6 +51,8 @@ pub enum Command {
     Delete,
     #[command(description = "exit delete mode")]
     StopDelete,
+    #[command(description = "show word statistics")]
+    Stats(String),
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -156,6 +158,26 @@ pub async fn handle_command(
             delete_mode.remove(&msg.chat.id.0);
             bot.send_message(msg.chat.id, "Delete mode deactivated.")
                 .await?;
+        }
+        Command::Stats(word) => {
+            if let Some(translation) = find_translation(&word, &read_translations()?) {
+                let total = translation.correct_answers + translation.wrong_answers;
+                let accuracy = if total > 0 {
+                    (translation.correct_answers as f64 / total as f64) * 100.0
+                } else {
+                    0.0
+                };
+
+                let stats_message = format!(
+                    "📊 Statistics for '{}'\n\nTotal attempts: {}\nCorrect: {}\nWrong: {}\nAccuracy: {:.1}%",
+                    word, total, translation.correct_answers, translation.wrong_answers, accuracy
+                );
+
+                bot.send_message(msg.chat.id, stats_message).await?;
+            } else {
+                bot.send_message(msg.chat.id, "Word not found in database.")
+                    .await?;
+            }
         }
     }
     Ok(())
