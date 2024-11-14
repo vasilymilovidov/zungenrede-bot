@@ -118,48 +118,58 @@ fn check_answer(answer: &str, translation: &Translation, expecting_russian: bool
             .filter(|c| c.is_alphabetic() || c.is_whitespace())
             .collect()
     }
-
+    
     if expecting_russian {
-        let expected = normalize(&translation.translation);
-        let answer = normalize(&answer);
-
-        // Get possible variations of correct answers
-        let mut correct_variants = vec![expected.clone()];
-        
-        // Add normalized variants without punctuation
-        correct_variants.extend(translation.examples.iter()
-            .map(|ex| normalize(&ex.russian)));
-
-        // Check for exact matches first
-        if correct_variants.contains(&answer) {
-            return AnswerCheck {
-                result: AnswerResult::Correct,
-                feedback: "".to_string(),
-            };
-        }
-
-        // Check for similar answers
-        let best_match = correct_variants.iter()
-            .map(|variant| is_similar(&answer, variant))
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap_or(0.0);
-
-        if best_match > 0.85 {
-            return AnswerCheck {
-                result: AnswerResult::AlmostCorrect {
-                    expected: translation.translation.clone(),
-                    similarity: best_match,
-                },
-                feedback: "".to_string(),
-            };
-        }
-
-        return AnswerCheck {
-            result: AnswerResult::Wrong {
-                expected: translation.translation.clone(),
-            },
-            feedback: "".to_string(),
-        };
+           let expected = normalize(&translation.translation);
+           let answer = normalize(&answer);
+   
+           // Split expected answer into individual variants by comma
+           let expected_variants: Vec<String> = translation.translation
+               .split(',')
+               .map(normalize)
+               .collect();
+   
+           if expected_variants.contains(&answer) {
+               return AnswerCheck {
+                   result: AnswerResult::Correct,
+                   feedback: "".to_string(),
+               };
+           }
+   
+           if answer == expected {
+               return AnswerCheck {
+                   result: AnswerResult::Correct,
+                   feedback: "".to_string(),
+               };
+           }
+   
+           let mut correct_variants = expected_variants;
+           
+           correct_variants.extend(translation.examples.iter()
+               .map(|ex| normalize(&ex.russian)));
+   
+           // Check for similar answers
+           let best_match = correct_variants.iter()
+               .map(|variant| is_similar(&answer, variant))
+               .max_by(|a, b| a.partial_cmp(b).unwrap())
+               .unwrap_or(0.0);
+   
+           if best_match > 0.85 {
+               return AnswerCheck {
+                   result: AnswerResult::AlmostCorrect {
+                       expected: translation.translation.clone(),
+                       similarity: best_match,
+                   },
+                   feedback: "".to_string(),
+               };
+           }
+   
+           return AnswerCheck {
+               result: AnswerResult::Wrong {
+                   expected: translation.translation.clone(),
+               },
+               feedback: "".to_string(),
+           };
 
     } else {
         // Handling German answers
