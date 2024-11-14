@@ -4,9 +4,12 @@ mod practice;
 mod promts_consts;
 mod translation;
 
-use commands_messages::{handle_command, handle_message, Command, DeleteMode};
+use commands_messages::{handle_command, handle_document, handle_message, Command, DeleteMode};
 use practice::PracticeSession;
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 use teloxide::prelude::*;
 use tokio::sync::{broadcast, Mutex};
 use translation::get_storage_path;
@@ -36,9 +39,11 @@ async fn main() {
             move |bot: Bot, msg: Message, cmd: Command| {
                 let shutdown = shutdown_tx_clone.clone();
                 let sessions = sessions_clone.clone();
-                let delete_mode = delete_mode_clone.clone(); 
+                let delete_mode = delete_mode_clone.clone();
                 async move {
-                    if let Err(e) = handle_command(&bot, &msg, cmd, &shutdown, &sessions, &delete_mode).await {
+                    if let Err(e) =
+                        handle_command(&bot, &msg, cmd, &shutdown, &sessions, &delete_mode).await
+                    {
                         log::error!("Error: {:?}", e);
                     }
                     ResponseResult::Ok(())
@@ -46,10 +51,20 @@ async fn main() {
             },
         ))
         .branch(
+            dptree::filter(|msg: Message| msg.document().is_some()).endpoint(
+                move |bot: Bot, msg: Message| async move {
+                    if let Err(e) = handle_document(&bot, &msg).await {
+                        log::error!("Error: {:?}", e);
+                    }
+                    ResponseResult::Ok(())
+                },
+            ),
+        )
+        .branch(
             dptree::filter(|msg: Message| msg.text().is_some()).endpoint(
                 move |bot: Bot, msg: Message| {
                     let sessions = sessions.clone();
-                    let delete_mode = delete_mode.clone(); 
+                    let delete_mode = delete_mode.clone();
                     async move {
                         if let Err(e) = handle_message(&bot, &msg, &sessions, &delete_mode).await {
                             log::error!("Error: {:?}", e);

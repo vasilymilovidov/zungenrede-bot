@@ -198,6 +198,17 @@ pub fn clear_translations() -> Result<()> {
     Ok(())
 }
 
+pub fn import_translations(json_data: &str) -> Result<usize> {
+    let translations: Vec<Translation> = serde_json::from_str(json_data)?;
+    
+    if !translations.iter().all(|t| t.is_valid()) {
+        return Err("Invalid translation data in import file".into());
+    }
+    
+    write_translations(&translations)?;
+    Ok(translations.len())
+}
+
 pub fn delete_translation(word: &str) -> Result<bool> {
     let mut translations = read_translations()?;
     let initial_len = translations.len();

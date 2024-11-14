@@ -2,6 +2,7 @@ use std::{collections::HashSet, env, sync::Arc};
 
 use teloxide::{
     macros::BotCommands,
+    net::Download,
     payloads::SendDocumentSetters,
     prelude::Requester,
     types::{InputFile, Message},
@@ -14,7 +15,9 @@ use crate::{
     practice::{check_practice_answer, start_practice_session, stop_practice_session},
     promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE},
     translation::{
-        add_translation, clear_translations, delete_translation, find_translation, format_translation_response, get_storage_path, parse_translation_response, read_translations, translate_text
+        add_translation, clear_translations, delete_translation, find_translation,
+        format_translation_response, get_storage_path, import_translations,
+        parse_translation_response, read_translations, translate_text,
     },
     PracticeSessions,
 };
@@ -40,6 +43,8 @@ pub enum Command {
     Clear,
     #[command(description = "start practice mode")]
     Practice,
+    #[command(description = "import translations database from JSON file")]
+    Import,
     #[command(description = "stop practice mode")]
     Stop,
     #[command(description = "enter delete mode")]
@@ -133,6 +138,10 @@ pub async fn handle_command(
             bot.send_message(msg.chat.id, "Translations database has been cleared.")
                 .await?;
         }
+        Command::Import => {
+            bot.send_message(msg.chat.id, "Please send me a JSON file with translations.")
+                .await?;
+        }
         Command::Delete => {
             let mut delete_mode = delete_mode.lock().await;
             delete_mode.insert(msg.chat.id.0);
@@ -168,7 +177,6 @@ pub async fn handle_message(
     }
 
     if let Some(text) = msg.text() {
-        // Check if user is in practice mode
         let is_practicing = sessions.lock().await.contains_key(&msg.chat.id.0);
 
         let is_deleting = delete_mode.lock().await.contains(&msg.chat.id.0);
@@ -240,12 +248,61 @@ pub async fn handle_message(
                     format_translation_response(&translation)
                 }
                 InputType::RussianSentence | InputType::GermanSentence => {
-                    // Don't store sentence translations
                     format!("{} ➜ {}", text, claude_response.trim())
                 }
             };
 
             bot.send_message(msg.chat.id, response).await?;
+        }
+    }
+    Ok(())
+}
+
+pub async fn handle_document(bot: &Bot, msg: &Message) -> Result<()> {
+    if !is_user_authorized(msg).await {
+        bot.send_message(
+            msg.chat.id,
+            "Sorry, you are not authorized to use this bot.",
+        )
+        .await?;
+        return Ok(());
+    }
+
+    if let Some(document) = msg.document() {
+        if document
+            .file_name
+            .as_ref()
+            .map_or(false, |name| name.ends_with(".json"))
+        {
+            let file = bot.get_file(&document.file.id).await?;
+            let mut bytes = Vec::new();
+            bot.download_file(&file.path, &mut bytes).await?;
+
+            match String::from_utf8(bytes) {
+                Ok(json_str) => match import_translations(&json_str) {
+                    Ok(count) => {
+                        bot.send_message(
+                            msg.chat.id,
+                            format!("✅ Successfully imported {} translations", count),
+                        )
+                        .await?;
+                    }
+                    Err(e) => {
+                        bot.send_message(
+                            msg.chat.id,
+                            format!("❌ Error importing translations: {}", e),
+                        )
+                        .await?;
+                    }
+                },
+                Err(e) => {
+                    bot.send_message(msg.chat.id, format!("❌ Error reading file: {}", e))
+                        .await?;
+                }
+            }
+        } else {
+            bot.send_message(msg.chat.id, "❌ Please send a JSON file")
+                .await?;
         }
     }
     Ok(())
