@@ -3,16 +3,40 @@ use std::{env, fs};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    analyze_input,
+    input::{analyze_input, InputType},
     promts_consts::{
         CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT,
         GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT,
         SIMPLIFY_PROMPT,
     },
-    ClaudeMessage, ClaudeRequest, ClaudeResponse, InputType,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeRequest {
+    model: String,
+    max_tokens: u32,
+    messages: Vec<ClaudeMessage>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeResponse {
+    content: Vec<ClaudeContent>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeContent {
+    #[serde(rename = "type")]
+    content_type: String,
+    text: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Translation {
@@ -181,19 +205,17 @@ pub fn parse_translation_response(original: &str, response: &str) -> Translation
         .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
 
     let mut translation = if is_russian_input {
-        // For Russian input, swap original and translation
         Translation {
-            original: lines.get(1).unwrap_or(&"").trim().to_string(), // German word
-            translation: lines.first().unwrap_or(&original).trim().to_string(), // Russian word
+            original: lines.get(1).unwrap_or(&"").trim().to_string(),
+            translation: lines.first().unwrap_or(&original).trim().to_string(),
             grammar_forms: Vec::new(),
             conjugations: None,
             examples: Vec::new(),
         }
     } else {
-        // For German input, keep as is
         Translation {
-            original: lines.first().unwrap_or(&original).trim().to_string(), // German word
-            translation: lines.get(1).unwrap_or(&"").trim().to_string(),     // Russian word
+            original: lines.first().unwrap_or(&original).trim().to_string(),
+            translation: lines.get(1).unwrap_or(&"").trim().to_string(),
             grammar_forms: Vec::new(),
             conjugations: None,
             examples: Vec::new(),

@@ -1,3 +1,5 @@
+use std::env;
+
 use teloxide::{
     macros::BotCommands,
     payloads::SendDocumentSetters,
@@ -8,13 +10,9 @@ use teloxide::{
 use tokio::sync::broadcast;
 
 use crate::{
-    analyze_input, is_user_authorized,
-    practice::{check_practice_answer, start_practice_session, stop_practice_session},
-    promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE},
-    translation::{
+    input::{analyze_input, InputType}, practice::{check_practice_answer, start_practice_session, stop_practice_session}, promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE}, translation::{
         add_translation, clear_translations, find_translation, format_translation_response, get_storage_path, parse_translation_response, read_translations, translate_text
-    },
-    InputType, PracticeSessions,
+    }, PracticeSessions
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -39,6 +37,41 @@ pub enum Command {
     Practice,
     #[command(description = "stop practice mode")]
     Stop,
+}
+
+fn get_allowed_users() -> Vec<i64> {
+    let users = env::var("ALLOWED_USERS")
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|id| {
+            let parsed = id.trim().parse::<i64>();
+            if let Err(e) = &parsed {
+                log::warn!("Failed to parse user ID '{}': {}", id, e);
+            }
+            parsed.ok()
+        })
+        .collect::<Vec<i64>>();
+
+    log::info!("Allowed users: {:?}", users);
+    users
+}
+
+async fn is_user_authorized(msg: &Message) -> bool {
+    let allowed_users = get_allowed_users();
+    let user_id = msg
+        .clone()
+        .from
+        .map(|u| i64::try_from(u.id.0).unwrap_or(0))
+        .unwrap_or(0);
+    // allowed_users.contains(&user_id);
+    let is_authorized = allowed_users.contains(&user_id);
+    log::info!(
+        "Authorization check - User ID: {}, Authorized: {}, Allowed users: {:?}",
+        user_id,
+        is_authorized,
+        allowed_users
+    );
+    is_authorized
 }
 
 pub async fn handle_command(
