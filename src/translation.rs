@@ -7,7 +7,7 @@ use crate::{
     promts_consts::{
         CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT,
         GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT,
-        SIMPLIFY_PROMPT,
+        SIMPLIFY_PROMPT, STORY_PROMPT,
     },
 };
 
@@ -130,7 +130,10 @@ pub async fn translate_text(text: &str) -> Result<String> {
 
     let client = reqwest::Client::new();
 
-    let (system_prompt, processed_text) = if text.starts_with("Context: ") {
+    let (system_prompt, processed_text) = if text.starts_with("STORY_GENERATION:") {
+        // Special case for story generation
+        (text.trim_start_matches("STORY_GENERATION:").to_string(), "")
+    } else if text.starts_with("Context: ") {
         // Handle contextual query
         let parts: Vec<&str> = text.splitn(2, "Query: ").collect();
         let context = parts[0].trim_start_matches("Context: ").trim();
@@ -174,13 +177,17 @@ pub async fn translate_text(text: &str) -> Result<String> {
     };
 
     let messages = vec![ClaudeMessage {
-        role: "user".to_string(),
-        content: format!("{}\n\n{}", system_prompt, processed_text),
-    }];
+           role: "user".to_string(),
+           content: if processed_text.is_empty() {
+               system_prompt
+           } else {
+               format!("{}\n\n{}", system_prompt, processed_text)
+           },
+       }];
 
     let request = ClaudeRequest {
         model: "claude-3-5-sonnet-20241022".to_string(),
-        max_tokens: 1024,
+        max_tokens: 4000,
         messages,
     };
 
@@ -445,4 +452,58 @@ pub fn format_translation_response(translation: &Translation) -> String {
     }
 
     response
+}
+
+pub fn get_german_words() -> Result<Vec<String>> {
+    let translations = read_translations()?;
+    let mut words = Vec::new();
+
+    for translation in translations {
+        // Add the original German word
+        if !translation.original.contains(' ') {
+            words.push(translation.original);
+        } else {
+            // For compound words (like "der Hund"), take the last part
+            if let Some(word) = translation.original.split_whitespace().last() {
+                words.push(word.to_string());
+            }
+        }
+
+        // Add words from examples
+        for example in translation.examples {
+            words.extend(
+                example
+                    .german
+                    .split_whitespace()
+                    .filter(|w| w.chars().next().map_or(false, |c| c.is_uppercase()))
+                    .map(|w| w.trim_matches(|c: char| !c.is_alphabetic()).to_string()),
+            );
+        }
+    }
+
+    // Remove duplicates
+    words.sort();
+    words.dedup();
+
+    Ok(words)
+}
+
+pub fn select_random_words(words: &[String], count: usize) -> Vec<String> {
+    use rand::seq::IteratorRandom;
+    let mut rng = rand::thread_rng();
+    words
+        .iter()
+        .choose_multiple(&mut rng, count.min(words.len()))
+        .into_iter()
+        .cloned()
+        .collect()
+}
+
+pub async fn generate_story() -> Result<String> {
+    let words = get_german_words()?;
+    let selected_words = select_random_words(&words, 100);
+    
+    let prompt = format!("STORY_GENERATION:{}", 
+        STORY_PROMPT.replace("{word list}", &selected_words.join(", ")));
+    translate_text(&prompt).await
 }

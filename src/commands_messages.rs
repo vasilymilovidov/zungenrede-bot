@@ -16,7 +16,7 @@ use crate::{
     promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE},
     translation::{
         add_translation, clear_translations, delete_translation, find_translation,
-        format_translation_response, get_storage_path, import_translations,
+        format_translation_response, generate_story, get_storage_path, import_translations,
         parse_translation_response, read_translations, translate_text,
     },
     PracticeSessions,
@@ -53,6 +53,8 @@ pub enum Command {
     StopDelete,
     #[command(description = "show word statistics")]
     Stats(String),
+    #[command(description = "generate a short story in German")]
+    Story,
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -177,6 +179,19 @@ pub async fn handle_command(
             } else {
                 bot.send_message(msg.chat.id, "Word not found in database.")
                     .await?;
+            }
+        }
+        Command::Story => {
+            bot.send_message(msg.chat.id, "Generating a story...")
+                .await?;
+            match generate_story().await {
+                Ok(story) => {
+                    bot.send_message(msg.chat.id, story).await?;
+                }
+                Err(e) => {
+                    bot.send_message(msg.chat.id, format!("Failed to generate story: {}", e))
+                        .await?;
+                }
             }
         }
     }

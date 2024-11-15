@@ -165,3 +165,40 @@ Wald
 -: Ich würde gerne wissen, ob Sie morgen Zeit haben
 
 Бот автоматически определяет язык ввода и тип запроса."#;
+
+pub const STORY_PROMPT: &str = r#"You are a creative storyteller writing modern German short stories in the style of Éric Rohmer.
+
+Write a short story (maximum 3900 characters) with the following characteristics:
+
+THEMATIC ELEMENTS:
+Focus on everyday encounters and subtle interpersonal dynamics
+Modern themes such as:
+Burnout
+Dating culture
+Big city life
+Feminism
+Mental health
+Gig economy
+Gentle social commentary, particularly on:
+Consumer behavior
+Modern work culture
+Relationships in the 21st century
+
+STYLE:
+Feminist perspective
+Queer friendly
+Tragicomic tone
+Natural dialogues in German (A2-B1 level)
+Subtle, light humor
+Understated irony
+Contemporary pop culture references
+Rohmer-esque "moral" undertones
+
+TECHNICAL REQUIREMENTS:
+Organically incorporate these learning vocabulary words: {word list}
+Use simple language (A2-B1) but sophisticated narrative structure
+Formatting:
+Title
+Empty line
+Story
+Maximum length: 3900 characters."#;
