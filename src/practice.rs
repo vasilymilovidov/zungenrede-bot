@@ -1,3 +1,6 @@
+use std::fs;
+
+use serde::Deserialize;
 use strsim::jaro_winkler;
 use teloxide::{prelude::Requester, types::Message, Bot};
 
@@ -24,7 +27,7 @@ struct AnswerCheck {
 
 impl AnswerCheck {
     fn format_message(&self) -> String {
-        match &self.result {
+        let mut message = match &self.result {
             AnswerResult::Correct => "✅ Правильно!".to_string(),
             AnswerResult::AlmostCorrect { expected, similarity } => {
                 format!(
@@ -39,17 +42,51 @@ impl AnswerCheck {
             AnswerResult::Wrong { expected } => {
                 format!("❌ Неправильно! Правильный ответ: {}", expected)
             }
+        };
+
+        if !self.feedback.is_empty() {
+            message.push_str("\n");
+            message.push_str(&self.feedback);
         }
+
+        message
     }
 }
 
 #[derive(Clone)]
 pub struct PracticeSession {
     current_word: Translation,
+    current_sentence: Option<PracticeSentence>,
+    practice_type: PracticeType,
     expecting_russian: bool,
     words_practiced: u32,
     correct_answers: u32,
     wrong_answers: u32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct PracticeSentence {
+    pub german_sentence: String,
+    pub russian_translation: String,
+    pub missing_word: String,
+}
+
+#[derive(Clone)]
+pub enum PracticeType {
+    WordTranslation,
+    SentenceCompletion,
+}
+
+fn load_practice_sentences() -> Result<Vec<PracticeSentence>> {
+    let file_content = fs::read_to_string("practice_sentences.json")?;
+    let sentences: Vec<PracticeSentence> = serde_json::from_str(&file_content)?;
+    Ok(sentences)
+}
+
+fn get_random_sentence(sentences: &[PracticeSentence]) -> Option<PracticeSentence> {
+    use rand::seq::SliceRandom;
+    let mut rng = rand::thread_rng();
+    sentences.choose(&mut rng).cloned()
 }
 
 fn format_practice_question(translation: &Translation, expecting_russian: bool) -> String {
@@ -97,28 +134,60 @@ pub async fn start_practice_session(
     sessions: &PracticeSessions,
 ) -> Result<()> {
     let translations = read_translations()?;
-    if translations.is_empty() {
-        bot.send_message(msg.chat.id, "No words in the database to practice with!")
+    let practice_sentences = load_practice_sentences()?;
+
+    if translations.is_empty() || practice_sentences.is_empty() {
+        bot.send_message(msg.chat.id, "No words or practice sentences available!")
             .await?;
         return Ok(());
     }
 
-    let translation = get_weighted_translation(&translations)
-        .ok_or("Failed to get weighted translation")?;
-    let expecting_russian = rand::random::<bool>();
-    let question = format_practice_question(&translation, expecting_russian);
+    let practice_type = if rand::random() {
+        PracticeType::WordTranslation
+    } else {
+        PracticeType::SentenceCompletion
+    };
+
+    let (question, session) = match practice_type {
+        PracticeType::WordTranslation => {
+            let translation = get_weighted_translation(&translations)
+                .ok_or("Failed to get weighted translation")?;
+            let expecting_russian = rand::random::<bool>();
+            let question = format_practice_question(&translation, expecting_russian);
+            
+            (question, PracticeSession {
+                current_word: translation,
+                current_sentence: None,
+                practice_type,
+                expecting_russian,
+                words_practiced: 0,
+                correct_answers: 0,
+                wrong_answers: 0,
+            })
+        },
+        PracticeType::SentenceCompletion => {
+            let sentence = get_random_sentence(&practice_sentences)
+                .ok_or("Failed to get practice sentence")?;
+            let question = format!(
+                "Заполните пропуск правильным словом:\n\n{}\n\nПеревод: {}",
+                sentence.german_sentence,
+                sentence.russian_translation
+            );
+            
+            (question, PracticeSession {
+                current_word: Translation::default(), // You'll need to implement Default for Translation
+                current_sentence: Some(sentence),
+                practice_type,
+                expecting_russian: false,
+                words_practiced: 0,
+                correct_answers: 0,
+                wrong_answers: 0,
+            })
+        }
+    };
 
     let mut sessions = sessions.lock().await;
-    sessions.insert(
-        msg.chat.id.0,
-        PracticeSession {
-            current_word: translation,
-            expecting_russian,
-            words_practiced: 0,
-            correct_answers: 0,
-            wrong_answers: 0,
-        },
-    );
+    sessions.insert(msg.chat.id.0, session);
 
     bot.send_message(msg.chat.id, "Practice mode started! Use /stop to end practice.")
         .await?;
@@ -292,44 +361,94 @@ pub async fn check_practice_answer(
 
     if let Some(mut session) = sessions.get(&msg.chat.id.0).cloned() {
         let answer = msg.text().unwrap_or("").trim();
-        let check_result = check_answer(answer, &session.current_word, session.expecting_russian);
-        
+        let (is_correct, feedback) = match &session.practice_type {
+            PracticeType::WordTranslation => {
+                let check_result = check_answer(answer, &session.current_word, session.expecting_russian);
+                let is_correct = matches!(check_result.result, AnswerResult::Correct);
+                (is_correct, check_result.format_message())
+            },
+            PracticeType::SentenceCompletion => {
+                if let Some(sentence) = &session.current_sentence {
+                    let is_correct = answer.trim().to_lowercase() == sentence.missing_word.to_lowercase();
+                    let feedback = if is_correct {
+                        "✅ Правильно!".to_string()
+                    } else {
+                        format!("❌ Неправильно! Правильный ответ: {}", sentence.missing_word)
+                    };
+                    (is_correct, feedback)
+                } else {
+                    (false, "Error: No practice sentence available".to_string())
+                }
+            }
+        };
+
         // Update statistics
         session.words_practiced += 1;
-        let is_correct = matches!(check_result.result, AnswerResult::Correct);
-        session.correct_answers += is_correct as u32;
-        session.wrong_answers += (!is_correct) as u32;
+        if is_correct {
+            session.correct_answers += 1;
+        } else {
+            session.wrong_answers += 1;
+        }
 
         // Format response
-        let mut response = check_result.format_message();
-        if !check_result.feedback.is_empty() {
-            response.push_str(&format!("\n{}", check_result.feedback));
-        }
+        let mut response = feedback;
         if session.words_practiced % STATS_INTERVAL == 0 {
             response.push_str(&format_practice_stats(&session));
         }
 
-        // Update word statistics in database
-        let word = if session.expecting_russian {
-            &session.current_word.original
-        } else {
-            &session.current_word.translation
-        };
-        update_translation_stats(word, is_correct)?;
+        // Update word statistics in database if it's a word translation
+        if let PracticeType::WordTranslation = session.practice_type {
+            let word = if session.expecting_russian {
+                &session.current_word.original
+            } else {
+                &session.current_word.translation
+            };
+            update_translation_stats(word, is_correct)?;
+        }
 
         bot.send_message(msg.chat.id, response).await?;
 
-        // If correct, get next word
+        // If correct, get next practice item
         if is_correct {
-            if let Some(next_translation) = get_weighted_translation(&read_translations()?) {
-                let expecting_russian = rand::random::<bool>();
-                let question = format_practice_question(&next_translation, expecting_russian);
-                
-                session.current_word = next_translation;
-                session.expecting_russian = expecting_russian;
-                
-                bot.send_message(msg.chat.id, question).await?;
-            }
+            let translations = read_translations()?;
+            let practice_sentences = load_practice_sentences()?;
+            
+            let practice_type = if rand::random() {
+                PracticeType::WordTranslation
+            } else {
+                PracticeType::SentenceCompletion
+            };
+
+            let question = match practice_type {
+                PracticeType::WordTranslation => {
+                    if let Some(next_translation) = get_weighted_translation(&translations) {
+                        let expecting_russian = rand::random::<bool>();
+                        session.current_word = next_translation.clone();
+                        session.current_sentence = None;
+                        session.practice_type = practice_type;
+                        session.expecting_russian = expecting_russian;
+                        format_practice_question(&next_translation, expecting_russian)
+                    } else {
+                        return Ok(());
+                    }
+                },
+                PracticeType::SentenceCompletion => {
+                    if let Some(sentence) = get_random_sentence(&practice_sentences) {
+                        session.current_sentence = Some(sentence.clone());
+                        session.current_word = Translation::default();
+                        session.practice_type = practice_type;
+                        format!(
+                            "Заполните пропуск правильным словом:\n\n{}\n\nПеревод: {}",
+                            sentence.german_sentence,
+                            sentence.russian_translation
+                        )
+                    } else {
+                        return Ok(());
+                    }
+                }
+            };
+
+            bot.send_message(msg.chat.id, question).await?;
         }
 
         sessions.insert(msg.chat.id.0, session);

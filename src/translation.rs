@@ -51,6 +51,20 @@ pub struct Translation {
     pub wrong_answers: u32,
 }
 
+impl Default for Translation {
+    fn default() -> Self {
+        Self {
+            original: String::new(),
+            translation: String::new(),
+            grammar_forms: Vec::new(),
+            conjugations: None,
+            examples: Vec::new(),
+            correct_answers: 0,
+            wrong_answers: 0,
+        }
+    }
+}
+
 impl Translation {
     fn is_valid(&self) -> bool {
         !self.original.trim().is_empty()
