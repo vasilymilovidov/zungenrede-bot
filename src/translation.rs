@@ -177,13 +177,13 @@ pub async fn translate_text(text: &str) -> Result<String> {
     };
 
     let messages = vec![ClaudeMessage {
-           role: "user".to_string(),
-           content: if processed_text.is_empty() {
-               system_prompt
-           } else {
-               format!("{}\n\n{}", system_prompt, processed_text)
-           },
-       }];
+        role: "user".to_string(),
+        content: if processed_text.is_empty() {
+            system_prompt
+        } else {
+            format!("{}\n\n{}", system_prompt, processed_text)
+        },
+    }];
 
     let request = ClaudeRequest {
         model: "claude-3-5-sonnet-20241022".to_string(),
@@ -348,7 +348,6 @@ pub fn parse_translation_response(original: &str, response: &str) -> Translation
             translation.conjugations = Some(conjugations);
         }
 
-        // Process examples
         while current_line < lines.len() {
             let line = lines[current_line].trim();
             if line.starts_with('1') || line.starts_with('2') {
@@ -375,13 +374,20 @@ pub fn parse_translation_response(original: &str, response: &str) -> Translation
         }
     }
 
+    if !is_russian_input {
+        let words: Vec<&str> = translation.original.split_whitespace().collect();
+        if words.len() == 2 && ["der", "die", "das"].contains(&words[0]) {
+            translation.grammar_forms.push(words[0].to_string());
+            translation.original = words[1].to_string();
+        }
+    }
+
     translation
 }
 
 pub fn format_translation_response(translation: &Translation) -> String {
     let mut response = String::new();
 
-    // Check if the word has grammar forms and the first form is an article
     let is_noun = translation
         .grammar_forms
         .first()
@@ -390,13 +396,11 @@ pub fn format_translation_response(translation: &Translation) -> String {
         })
         .unwrap_or(false);
 
-    // Check if the original word contains Cyrillic characters (Russian input)
     let is_russian = translation
         .original
         .chars()
         .any(|c| matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}'));
 
-    // Check if the original word already starts with an article
     let already_has_article = translation
         .original
         .split_whitespace()
@@ -407,11 +411,9 @@ pub fn format_translation_response(translation: &Translation) -> String {
     if is_noun {
         if let Some(article) = translation.grammar_forms.first() {
             if is_russian {
-                // For Russian input, show original word first, then article with German translation
                 response.push_str(&format!("➡️ {}\n", translation.original));
                 response.push_str(&format!("⬅️ {} {}\n", article, translation.translation));
             } else {
-                // For German input, show original word as is if it already has an article
                 if already_has_article {
                     response.push_str(&format!("➡️ {}\n", translation.original));
                 } else {
@@ -502,8 +504,10 @@ pub fn select_random_words(words: &[String], count: usize) -> Vec<String> {
 pub async fn generate_story() -> Result<String> {
     let words = get_german_words()?;
     let selected_words = select_random_words(&words, 100);
-    
-    let prompt = format!("STORY_GENERATION:{}", 
-        STORY_PROMPT.replace("{word list}", &selected_words.join(", ")));
+
+    let prompt = format!(
+        "STORY_GENERATION:{}",
+        STORY_PROMPT.replace("{word list}", &selected_words.join(", "))
+    );
     translate_text(&prompt).await
 }
