@@ -29,6 +29,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 COPY --from=builder /app/target/release/zungenrede-bot .
+COPY practice_sentences.json .
 
 # Use Railway's specified mount path
 ENV STORAGE_FILE=/translations-data/translations_storage.json

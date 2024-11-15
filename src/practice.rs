@@ -78,7 +78,8 @@ pub enum PracticeType {
 }
 
 fn load_practice_sentences() -> Result<Vec<PracticeSentence>> {
-    let file_content = fs::read_to_string("practice_sentences.json")?;
+    let file_path = std::env::current_dir()?.join("practice_sentences.json");
+    let file_content = fs::read_to_string(file_path)?;
     let sentences: Vec<PracticeSentence> = serde_json::from_str(&file_content)?;
     Ok(sentences)
 }
