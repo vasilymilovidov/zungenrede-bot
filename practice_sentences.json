@@ -205,253 +205,788 @@
     "missing_word": "ihr"
   },
   {
-      "german_sentence": "Er hat die Nachricht ___ Freundin geschickt.",
-      "russian_translation": "Он отправил сообщение своей подруге.",
-      "missing_word": "seiner"
-    },
-    {
-      "german_sentence": "Sie denkt immer an ___.",
-      "russian_translation": "Она всегда думает о нём.",
-      "missing_word": "ihn"
-    },
-    {
-      "german_sentence": "Wir fahren ___ Sonntag nach Hamburg.",
-      "russian_translation": "Мы едем в Гамбург в воскресенье.",
-      "missing_word": "am"
-    },
-    {
-      "german_sentence": "Ich habe nichts von ___ gehört.",
-      "russian_translation": "Я ничего о них не слышал.",
-      "missing_word": "ihnen"
-    },
-    {
-      "german_sentence": "Sie spricht oft über ___ Probleme.",
-      "russian_translation": "Она часто говорит о своих проблемах.",
-      "missing_word": "ihre"
-    },
-    {
-      "german_sentence": "Er wohnt seit drei Monaten in ___ Stadt.",
-      "russian_translation": "Он живет в этом городе уже три месяца.",
-      "missing_word": "dieser"
-    },
-    {
-      "german_sentence": "Er hat die Tasche auf ___ Boden gestellt.",
-      "russian_translation": "Он поставил сумку на землю.",
-      "missing_word": "den"
-    },
-    {
-      "german_sentence": "Ich komme gerade aus ___ Büro.",
-      "russian_translation": "Я только что пришёл из офиса.",
-      "missing_word": "dem"
-    },
-    {
-      "german_sentence": "Wir treffen uns heute bei ___ Freund.",
-      "russian_translation": "Сегодня мы встречаемся у моего друга.",
-      "missing_word": "meinem"
-    },
-    {
-      "german_sentence": "Sie hat das Geschenk in ___ Tasche gelegt.",
-      "russian_translation": "Она положила подарок в сумку.",
-      "missing_word": "die"
-    },
-    {
-      "german_sentence": "Er wohnt in ___ schönen Haus.",
-      "russian_translation": "Он живёт в красивом доме.",
-      "missing_word": "einem"
-    },
-    {
-      "german_sentence": "Hast du ___ Buch gelesen?",
-      "russian_translation": "Ты читал эту книгу?",
-      "missing_word": "das"
-    },
-    {
-      "german_sentence": "Er hat das Essen für ___ gekocht.",
-      "russian_translation": "Он приготовил еду для них.",
-      "missing_word": "sie"
-    },
-    {
-      "german_sentence": "Wir fahren morgen ___ Berge.",
-      "russian_translation": "Завтра мы поедем в горы.",
-      "missing_word": "in die"
-    },
-    {
-      "german_sentence": "Ich habe gestern mit ___ gesprochen.",
-      "russian_translation": "Я вчера разговаривал с ним.",
-      "missing_word": "ihm"
-    },
-    {
-      "german_sentence": "Sie gibt ___ Hund Futter.",
-      "russian_translation": "Она кормит собаку.",
-      "missing_word": "ihrem"
-    },
-    {
-      "german_sentence": "Sie hat das Haus neben ___ gekauft.",
-      "russian_translation": "Она купила дом рядом с нашим.",
-      "missing_word": "unserem"
-    },
-    {
-      "german_sentence": "Er hilft ___ bei den Hausaufgaben.",
-      "russian_translation": "Он помогает ей с домашними заданиями.",
-      "missing_word": "ihr"
-    },
-    {
-      "german_sentence": "Wir fahren nächsten Monat mit ___ Auto in Urlaub.",
-      "russian_translation": "В следующем месяце мы отправляемся в отпуск на машине.",
-      "missing_word": "unserem"
-    },
-    {
-      "german_sentence": "Er hat das Buch auf ___ Tisch gelegt.",
-      "russian_translation": "Он положил книгу на стол.",
-      "missing_word": "den"
-    },
-    {
-      "german_sentence": "Ich habe das Geschenk ___ gegeben.",
-      "russian_translation": "Я дал подарок ему.",
-      "missing_word": "ihm"
-    },
-    {
-      "german_sentence": "Wir sind gestern in ___ Restaurant gegangen.",
-      "russian_translation": "Мы вчера пошли в ресторан.",
-      "missing_word": "ein"
-    },
-    {
-      "german_sentence": "Sie hat ___ Schwester geholfen.",
-      "russian_translation": "Она помогла своей сестре.",
-      "missing_word": "ihrer"
-    },
-    {
-      "german_sentence": "Sie hat das Buch von ___ gekauft.",
-      "russian_translation": "Она купила книгу у него.",
-      "missing_word": "ihm"
-    },
-    {
-      "german_sentence": "Wir sitzen zusammen an ___ Tisch.",
-      "russian_translation": "Мы сидим вместе за столом.",
-      "missing_word": "dem"
-    },
-    {
-      "german_sentence": "Das Paket ist gestern ___ angekommen.",
-      "russian_translation": "Пакет прибыл вчера.",
-      "missing_word": "bei uns"
-    },
-    {
-      "german_sentence": "Ihr habt ___ Haus renoviert.",
-      "russian_translation": "Вы отремонтировали ваш дом.",
-      "missing_word": "euer"
-    },
-    {
-      "german_sentence": "Er telefoniert gerade mit ___.",
-      "russian_translation": "Он сейчас говорит по телефону с ней.",
-      "missing_word": "ihr"
-    },
-    {
-      "german_sentence": "Das Auto fährt über ___ Brücke.",
-      "russian_translation": "Машина едет по мосту.",
-      "missing_word": "die"
-    },
-    {
-      "german_sentence": "Er hat sich auf ___ Stuhl gesetzt.",
-      "russian_translation": "Он сел на стул.",
-      "missing_word": "den"
-    },
-    {
-      "german_sentence": "Wir haben gestern ___ getroffen.",
-      "russian_translation": "Вчера мы встретили его.",
-      "missing_word": "ihn"
-    },
-    {
-      "german_sentence": "Sie spielt gerne mit ___ Freunden.",
-      "russian_translation": "Она любит играть со своими друзьями.",
-      "missing_word": "ihren"
-    },
-    {
-      "german_sentence": "Er hat das Kapitel in ___ Buch gelesen.",
-      "russian_translation": "Он прочитал главу в книге.",
-      "missing_word": "diesem"
-    },
-    {
-      "german_sentence": "Ich werde das Geschenk zu ___ bringen.",
-      "russian_translation": "Я отвезу подарок ей.",
-      "missing_word": "ihr"
-    },
-    {
-      "german_sentence": "Er hat den Schlüssel unter ___ Kissen versteckt.",
-      "russian_translation": "Он спрятал ключ под подушкой.",
-      "missing_word": "das"
-    },
-    {
-      "german_sentence": "Gehen wir heute ___ Cafe?",
-      "russian_translation": "Пойдем ли мы сегодня в кафе?",
-      "missing_word": "ins"
-    },
-    {
-      "german_sentence": "Er schaut gerade aus ___ Fenster.",
-      "russian_translation": "Он смотрит из окна.",
-      "missing_word": "dem"
-    },
-    {
-      "german_sentence": "Er hat das Bild an ___ Wand gehängt.",
-      "russian_translation": "Он повесил картину на стену.",
-      "missing_word": "die"
-    },
-    {
-      "german_sentence": "Das Geschenk kommt direkt ___ Herz.",
-      "russian_translation": "Подарок идёт прямо от сердца.",
-      "missing_word": "von"
-    },
-    {
-      "german_sentence": "Sie hat das Treffen mit ___ besprochen.",
-      "russian_translation": "Она обсудила встречу с ним.",
-      "missing_word": "ihm"
-    },
-    {
-      "german_sentence": "Wir fahren morgen ___ Strand.",
-      "russian_translation": "Завтра мы едем на пляж.",
-      "missing_word": "an den"
-    },
-    {
-      "german_sentence": "Er antwortet ___ auf die Frage.",
-      "russian_translation": "Он отвечает ей на вопрос.",
-      "missing_word": "ihr"
-    },
-    {
-      "german_sentence": "Er schaut oft nach ___ Kindern.",
-      "russian_translation": "Он часто присматривает за своими детьми.",
-      "missing_word": "seinen"
-    },
-    {
-      "german_sentence": "Hast du das Buch ___ gegeben?",
-      "russian_translation": "Ты отдал книгу ему?",
-      "missing_word": "ihm"
-    },
-    {
-      "german_sentence": "Er hat das Handy auf ___ Boden fallen lassen.",
-      "russian_translation": "Он уронил телефон на пол.",
-      "missing_word": "den"
-    },
-    {
-      "german_sentence": "Ich werde morgen mit ___ anfangen.",
-      "russian_translation": "Завтра я начну с этого.",
-      "missing_word": "diesem"
-    },
-    {
-      "german_sentence": "Hast du schon mit ___ gesprochen?",
-      "russian_translation": "Ты уже поговорил с ними?",
-      "missing_word": "ihnen"
-    },
-    {
-      "german_sentence": "Sie ist heute in ___ Schule gegangen.",
-      "russian_translation": "Она сегодня пошла в школу.",
-      "missing_word": "die"
-    },
-    {
-      "german_sentence": "Wo hast du ___ Schlüssel hingelegt?",
-      "russian_translation": "Куда ты положил ключи?",
-      "missing_word": "die"
-    },
-    {
-      "german_sentence": "Er hat einen Brief an ___ geschrieben.",
-      "russian_translation": "Он написал письмо ей.",
-      "missing_word": "sie"
-    }
+    "german_sentence": "Er hat die Nachricht ___ Freundin geschickt.",
+    "russian_translation": "Он отправил сообщение своей подруге.",
+    "missing_word": "seiner"
+  },
+  {
+    "german_sentence": "Sie denkt immer an ___.",
+    "russian_translation": "Она всегда думает о нём.",
+    "missing_word": "ihn"
+  },
+  {
+    "german_sentence": "Wir fahren ___ Sonntag nach Hamburg.",
+    "russian_translation": "Мы едем в Гамбург в воскресенье.",
+    "missing_word": "am"
+  },
+  {
+    "german_sentence": "Ich habe nichts von ___ gehört.",
+    "russian_translation": "Я ничего о них не слышал.",
+    "missing_word": "ihnen"
+  },
+  {
+    "german_sentence": "Sie spricht oft über ___ Probleme.",
+    "russian_translation": "Она часто говорит о своих проблемах.",
+    "missing_word": "ihre"
+  },
+  {
+    "german_sentence": "Er wohnt seit drei Monaten in ___ Stadt.",
+    "russian_translation": "Он живет в этом городе уже три месяца.",
+    "missing_word": "dieser"
+  },
+  {
+    "german_sentence": "Er hat die Tasche auf ___ Boden gestellt.",
+    "russian_translation": "Он поставил сумку на землю.",
+    "missing_word": "den"
+  },
+  {
+    "german_sentence": "Ich komme gerade aus ___ Büro.",
+    "russian_translation": "Я только что пришёл из офиса.",
+    "missing_word": "dem"
+  },
+  {
+    "german_sentence": "Wir treffen uns heute bei ___ Freund.",
+    "russian_translation": "Сегодня мы встречаемся у моего друга.",
+    "missing_word": "meinem"
+  },
+  {
+    "german_sentence": "Sie hat das Geschenk in ___ Tasche gelegt.",
+    "russian_translation": "Она положила подарок в сумку.",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Er wohnt in ___ schönen Haus.",
+    "russian_translation": "Он живёт в красивом доме.",
+    "missing_word": "einem"
+  },
+  {
+    "german_sentence": "Hast du ___ Buch gelesen?",
+    "russian_translation": "Ты читал эту книгу?",
+    "missing_word": "das"
+  },
+  {
+    "german_sentence": "Er hat das Essen für ___ gekocht.",
+    "russian_translation": "Он приготовил еду для них.",
+    "missing_word": "sie"
+  },
+  {
+    "german_sentence": "Wir fahren morgen ___ Berge.",
+    "russian_translation": "Завтра мы поедем в горы.",
+    "missing_word": "in die"
+  },
+  {
+    "german_sentence": "Ich habe gestern mit ___ gesprochen.",
+    "russian_translation": "Я вчера разговаривал с ним.",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Sie gibt ___ Hund Futter.",
+    "russian_translation": "Она кормит собаку.",
+    "missing_word": "ihrem"
+  },
+  {
+    "german_sentence": "Sie hat das Haus neben ___ gekauft.",
+    "russian_translation": "Она купила дом рядом с нашим.",
+    "missing_word": "unserem"
+  },
+  {
+    "german_sentence": "Er hilft ___ bei den Hausaufgaben.",
+    "russian_translation": "Он помогает ей с домашними заданиями.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Wir fahren nächsten Monat mit ___ Auto in Urlaub.",
+    "russian_translation": "В следующем месяце мы отправляемся в отпуск на машине.",
+    "missing_word": "unserem"
+  },
+  {
+    "german_sentence": "Er hat das Buch auf ___ Tisch gelegt.",
+    "russian_translation": "Он положил книгу на стол.",
+    "missing_word": "den"
+  },
+  {
+    "german_sentence": "Ich habe das Geschenk ___ gegeben.",
+    "russian_translation": "Я дал подарок ему.",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Wir sind gestern in ___ Restaurant gegangen.",
+    "russian_translation": "Мы вчера пошли в ресторан.",
+    "missing_word": "ein"
+  },
+  {
+    "german_sentence": "Sie hat ___ Schwester geholfen.",
+    "russian_translation": "Она помогла своей сестре.",
+    "missing_word": "ihrer"
+  },
+  {
+    "german_sentence": "Sie hat das Buch von ___ gekauft.",
+    "russian_translation": "Она купила книгу у него.",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Wir sitzen zusammen an ___ Tisch.",
+    "russian_translation": "Мы сидим вместе за столом.",
+    "missing_word": "dem"
+  },
+  {
+    "german_sentence": "Das Paket ist gestern ___ angekommen.",
+    "russian_translation": "Пакет прибыл вчера.",
+    "missing_word": "bei uns"
+  },
+  {
+    "german_sentence": "Ihr habt ___ Haus renoviert.",
+    "russian_translation": "Вы отремонтировали ваш дом.",
+    "missing_word": "euer"
+  },
+  {
+    "german_sentence": "Er telefoniert gerade mit ___.",
+    "russian_translation": "Он сейчас говорит по телефону с ней.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Das Auto fährt über ___ Brücke.",
+    "russian_translation": "Машина едет по мосту.",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Er hat sich auf ___ Stuhl gesetzt.",
+    "russian_translation": "Он сел на стул.",
+    "missing_word": "den"
+  },
+  {
+    "german_sentence": "Wir haben gestern ___ getroffen.",
+    "russian_translation": "Вчера мы встретили его.",
+    "missing_word": "ihn"
+  },
+  {
+    "german_sentence": "Sie spielt gerne mit ___ Freunden.",
+    "russian_translation": "Она любит играть со своими друзьями.",
+    "missing_word": "ihren"
+  },
+  {
+    "german_sentence": "Er hat das Kapitel in ___ Buch gelesen.",
+    "russian_translation": "Он прочитал главу в книге.",
+    "missing_word": "diesem"
+  },
+  {
+    "german_sentence": "Ich werde das Geschenk zu ___ bringen.",
+    "russian_translation": "Я отвезу подарок ей.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Er hat den Schlüssel unter ___ Kissen versteckt.",
+    "russian_translation": "Он спрятал ключ под подушкой.",
+    "missing_word": "das"
+  },
+  {
+    "german_sentence": "Gehen wir heute ___ Cafe?",
+    "russian_translation": "Пойдем ли мы сегодня в кафе?",
+    "missing_word": "ins"
+  },
+  {
+    "german_sentence": "Er schaut gerade aus ___ Fenster.",
+    "russian_translation": "Он смотрит из окна.",
+    "missing_word": "dem"
+  },
+  {
+    "german_sentence": "Er hat das Bild an ___ Wand gehängt.",
+    "russian_translation": "Он повесил картину на стену.",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Das Geschenk kommt direkt ___ Herz.",
+    "russian_translation": "Подарок идёт прямо от сердца.",
+    "missing_word": "von"
+  },
+  {
+    "german_sentence": "Sie hat das Treffen mit ___ besprochen.",
+    "russian_translation": "Она обсудила встречу с ним.",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Wir fahren morgen ___ Strand.",
+    "russian_translation": "Завтра мы едем на пляж.",
+    "missing_word": "an den"
+  },
+  {
+    "german_sentence": "Er antwortet ___ auf die Frage.",
+    "russian_translation": "Он отвечает ей на вопрос.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Er schaut oft nach ___ Kindern.",
+    "russian_translation": "Он часто присматривает за своими детьми.",
+    "missing_word": "seinen"
+  },
+  {
+    "german_sentence": "Hast du das Buch ___ gegeben?",
+    "russian_translation": "Ты отдал книгу ему?",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Er hat das Handy auf ___ Boden fallen lassen.",
+    "russian_translation": "Он уронил телефон на пол.",
+    "missing_word": "den"
+  },
+  {
+    "german_sentence": "Ich werde morgen mit ___ anfangen.",
+    "russian_translation": "Завтра я начну с этого.",
+    "missing_word": "diesem"
+  },
+  {
+    "german_sentence": "Hast du schon mit ___ gesprochen?",
+    "russian_translation": "Ты уже поговорил с ними?",
+    "missing_word": "ihnen"
+  },
+  {
+    "german_sentence": "Sie ist heute in ___ Schule gegangen.",
+    "russian_translation": "Она сегодня пошла в школу.",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Wo hast du ___ Schlüssel hingelegt?",
+    "russian_translation": "Куда ты положил ключи?",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Er hat einen Brief an ___ geschrieben.",
+    "russian_translation": "Он написал письмо ей.",
+    "missing_word": "sie"
+  },
+  {
+    "german_sentence": "Die Katze springt ___ Tisch.",
+    "russian_translation": "Кошка прыгает на стол.",
+    "missing_word": "auf den"
+  },
+  {
+    "german_sentence": "Er stellt die Blumen ___ Fenster.",
+    "russian_translation": "Он ставит цветы у окна.",
+    "missing_word": "ans"
+  },
+  {
+    "german_sentence": "Wir haben ___ im Kino getroffen.",
+    "russian_translation": "Мы встретили их в кино.",
+    "missing_word": "sie"
+  },
+  {
+    "german_sentence": "Sie macht ___ Sorgen um ihn.",
+    "russian_translation": "Она беспокоится о нём.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Der Hund läuft ___ Park.",
+    "russian_translation": "Собака бежит в парке.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Ich habe ___ Handy vergessen.",
+    "russian_translation": "Я забыл свой телефон.",
+    "missing_word": "mein"
+  },
+  {
+    "german_sentence": "Sie denkt oft ___ Familie.",
+    "russian_translation": "Она часто думает о семье.",
+    "missing_word": "an ihre"
+  },
+  {
+    "german_sentence": "Das Bild hängt ___ Wand.",
+    "russian_translation": "Картина висит на стене.",
+    "missing_word": "an der"
+  },
+  {
+    "german_sentence": "Er hat ___ das Buch geliehen.",
+    "russian_translation": "Он одолжил ей книгу.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Die Kinder spielen ___ Garten.",
+    "russian_translation": "Дети играют в саду.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Der Ball rollt ___ Straße.",
+    "russian_translation": "Мяч катится по улице.",
+    "missing_word": "auf der"
+  },
+  {
+    "german_sentence": "Sie kümmert ___ um ihre Pflanzen.",
+    "russian_translation": "Она заботится о своих растениях.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Wir treffen ___ nächste Woche.",
+    "russian_translation": "Мы встретимся на следующей неделе.",
+    "missing_word": "uns"
+  },
+  {
+    "german_sentence": "Er legt ___ Schlüssel auf den Tisch.",
+    "russian_translation": "Он кладёт свои ключи на стол.",
+    "missing_word": "seine"
+  },
+  {
+    "german_sentence": "Sie steht ___ Fenster.",
+    "russian_translation": "Она стоит у окна.",
+    "missing_word": "am"
+  },
+  {
+    "german_sentence": "Das gehört ___ Bruder.",
+    "russian_translation": "Это принадлежит моему брату.",
+    "missing_word": "meinem"
+  },
+  {
+    "german_sentence": "Ich erinnere ___ an den Urlaub.",
+    "russian_translation": "Я вспоминаю об отпуске.",
+    "missing_word": "mich"
+  },
+  {
+    "german_sentence": "Die Lampe hängt ___ Decke.",
+    "russian_translation": "Лампа висит на потолке.",
+    "missing_word": "an der"
+  },
+  {
+    "german_sentence": "Er hat ___ Auto gewaschen.",
+    "russian_translation": "Он помыл свою машину.",
+    "missing_word": "sein"
+  },
+  {
+    "german_sentence": "Sie geht ___ Supermarkt.",
+    "russian_translation": "Она идёт в супермаркет.",
+    "missing_word": "zum"
+  },
+  {
+    "german_sentence": "Wir fahren ___ Großeltern.",
+    "russian_translation": "Мы едем к бабушке и дедушке.",
+    "missing_word": "zu den"
+  },
+  {
+    "german_sentence": "Die Katze versteckt ___ unter dem Bett.",
+    "russian_translation": "Кошка прячется под кроватью.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Er hat ___ Telefonnummer vergessen.",
+    "russian_translation": "Он забыл её номер телефона.",
+    "missing_word": "ihre"
+  },
+  {
+    "german_sentence": "Das Buch liegt ___ Regal.",
+    "russian_translation": "Книга лежит на полке.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Sie hat ___ beim Kochen geholfen.",
+    "russian_translation": "Она помогла мне готовить.",
+    "missing_word": "mir"
+  },
+  {
+    "german_sentence": "Der Vogel sitzt ___ Zweig.",
+    "russian_translation": "Птица сидит на ветке.",
+    "missing_word": "auf dem"
+  },
+  {
+    "german_sentence": "Wir setzen ___ ans Fenster.",
+    "russian_translation": "Мы садимся у окна.",
+    "missing_word": "uns"
+  },
+  {
+    "german_sentence": "Er schreibt ___ Freundin eine E-Mail.",
+    "russian_translation": "Он пишет электронное письмо своей подруге.",
+    "missing_word": "seiner"
+  },
+  {
+    "german_sentence": "Das Wasser fließt ___ Fluss.",
+    "russian_translation": "Вода течёт в реке.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Sie hat ___ Tasche verloren.",
+    "russian_translation": "Она потеряла свою сумку.",
+    "missing_word": "ihre"
+  },
+  {
+    "german_sentence": "Die Kinder freuen ___ auf Weihnachten.",
+    "russian_translation": "Дети с нетерпением ждут Рождества.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Er wartet ___ Bushaltestelle.",
+    "russian_translation": "Он ждёт на автобусной остановке.",
+    "missing_word": "an der"
+  },
+  {
+    "german_sentence": "Sie denkt oft ___ Kindheit.",
+    "russian_translation": "Она часто думает о детстве.",
+    "missing_word": "an ihre"
+  },
+  {
+    "german_sentence": "Das Auto steht ___ Garage.",
+    "russian_translation": "Машина стоит в гараже.",
+    "missing_word": "in der"
+  },
+  {
+    "german_sentence": "Ich gebe ___ das Geld zurück.",
+    "russian_translation": "Я верну тебе деньги.",
+    "missing_word": "dir"
+  },
+  {
+    "german_sentence": "Die Mutter bringt ___ Kind zur Schule.",
+    "russian_translation": "Мать ведёт своего ребёнка в школу.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Er stellt ___ Frage.",
+    "russian_translation": "Он задаёт вопрос.",
+    "missing_word": "eine"
+  },
+  {
+    "german_sentence": "Wir treffen ___ Freunde im Café.",
+    "russian_translation": "Мы встречаем наших друзей в кафе.",
+    "missing_word": "unsere"
+  },
+  {
+    "german_sentence": "Sie legt ___ Buch auf den Tisch.",
+    "russian_translation": "Она кладёт книгу на стол.",
+    "missing_word": "das"
+  },
+  {
+    "german_sentence": "Der Schlüssel liegt ___ Schublade.",
+    "russian_translation": "Ключ лежит в ящике.",
+    "missing_word": "in der"
+  },
+  {
+    "german_sentence": "Er hat ___ verletzt.",
+    "russian_translation": "Он поранился.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie gibt ___ Katze Futter.",
+    "russian_translation": "Она даёт корм своей кошке.",
+    "missing_word": "ihrer"
+  },
+  {
+    "german_sentence": "Das Geschäft ist ___ Ecke.",
+    "russian_translation": "Магазин находится за углом.",
+    "missing_word": "um die"
+  },
+  {
+    "german_sentence": "Wir fahren ___ Berge.",
+    "russian_translation": "Мы едем в горы.",
+    "missing_word": "in die"
+  },
+  {
+    "german_sentence": "Er hat ___ Jacke ausgezogen.",
+    "russian_translation": "Он снял свою куртку.",
+    "missing_word": "seine"
+  },
+  {
+    "german_sentence": "Die Sonne scheint ___ Fenster.",
+    "russian_translation": "Солнце светит через окно.",
+    "missing_word": "durchs"
+  },
+  {
+    "german_sentence": "Sie hilft ___ Großmutter.",
+    "russian_translation": "Она помогает своей бабушке.",
+    "missing_word": "ihrer"
+  },
+  {
+    "german_sentence": "Das Flugzeug fliegt ___ Wolken.",
+    "russian_translation": "Самолёт летит над облаками.",
+    "missing_word": "über den"
+  },
+  {
+    "german_sentence": "Er bereitet ___ auf die Prüfung vor.",
+    "russian_translation": "Он готовится к экзамену.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie spricht mit ___ Lehrer.",
+    "russian_translation": "Она разговаривает со своим учителем.",
+    "missing_word": "ihrem"
+  },
+  {
+    "german_sentence": "Der Brief liegt ___ Schreibtisch.",
+    "russian_translation": "Письмо лежит на письменном столе.",
+    "missing_word": "auf dem"
+  },
+  {
+    "german_sentence": "Wir fahren ___ Meer.",
+    "russian_translation": "Мы едем к морю.",
+    "missing_word": "ans"
+  },
+  {
+    "german_sentence": "Er schickt ___ eine Nachricht.",
+    "russian_translation": "Он отправляет ей сообщение.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Die Kinder spielen ___ Spielplatz.",
+    "russian_translation": "Дети играют на детской площадке.",
+    "missing_word": "auf dem"
+  },
+  {
+    "german_sentence": "Sie zieht ___ warm an.",
+    "russian_translation": "Она тепло одевается.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Das Bild hängt ___ Computer.",
+    "russian_translation": "Картина висит над компьютером.",
+    "missing_word": "über dem"
+  },
+  {
+    "german_sentence": "Er hat ___ Brille vergessen.",
+    "russian_translation": "Он забыл свои очки.",
+    "missing_word": "seine"
+  },
+  {
+    "german_sentence": "Wir gehen ___ Theater.",
+    "russian_translation": "Мы идём в театр.",
+    "missing_word": "ins"
+  },
+  {
+    "german_sentence": "Sie stellt die Vase ___ Fenster.",
+    "russian_translation": "Она ставит вазу на подоконник.",
+    "missing_word": "ans"
+  },
+  {
+    "german_sentence": "Der Hund läuft ___ Herrchen.",
+    "russian_translation": "Собака бежит к своему хозяину.",
+    "missing_word": "zu seinem"
+  },
+  {
+    "german_sentence": "Die Tasche steht ___ Tür.",
+    "russian_translation": "Сумка стоит у двери.",
+    "missing_word": "an der"
+  },
+  {
+    "german_sentence": "Er erinnert ___ an den Termin.",
+    "russian_translation": "Он вспоминает о встрече.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie geht ___ Ärztin.",
+    "russian_translation": "Она идёт к врачу.",
+    "missing_word": "zur"
+  },
+  {
+    "german_sentence": "Das Kind spielt mit ___ Puppe.",
+    "russian_translation": "Ребёнок играет со своей куклой.",
+    "missing_word": "seiner"
+  },
+  {
+    "german_sentence": "Die Katze schläft ___ Sofa.",
+    "russian_translation": "Кошка спит на диване.",
+    "missing_word": "auf dem"
+  },
+  {
+    "german_sentence": "Er fährt ___ Fahrrad zur Arbeit.",
+    "russian_translation": "Он ездит на работу на велосипеде.",
+    "missing_word": "mit dem"
+  },
+  {
+    "german_sentence": "Sie zeigt ___ den Weg.",
+    "russian_translation": "Она показывает им дорогу.",
+    "missing_word": "ihnen"
+  },
+  {
+    "german_sentence": "Das Restaurant ist ___ Ecke.",
+    "russian_translation": "Ресторан находится на углу.",
+    "missing_word": "an der"
+  },
+  {
+    "german_sentence": "Wir treffen ___ beim Konzert.",
+    "russian_translation": "Мы встретимся на концерте.",
+    "missing_word": "uns"
+  },
+  {
+    "german_sentence": "Er legt ___ Schlüssel in die Tasche.",
+    "russian_translation": "Он кладёт ключи в сумку.",
+    "missing_word": "die"
+  },
+  {
+    "german_sentence": "Sie steigt ___ Bus.",
+    "russian_translation": "Она садится в автобус.",
+    "missing_word": "in den"
+  },
+  {
+    "german_sentence": "Das Buch gehört ___ Schwester.",
+    "russian_translation": "Книга принадлежит моей сестре.",
+    "missing_word": "meiner"
+  },
+  {
+    "german_sentence": "Er interessiert ___ für Musik.",
+    "russian_translation": "Он интересуется музыкой.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie wartet ___ Schwimmbad.",
+    "russian_translation": "Она ждёт в бассейне.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Die Blumen stehen ___ Vase.",
+    "russian_translation": "Цветы стоят в вазе.",
+    "missing_word": "in der"
+  },
+  {
+    "german_sentence": "Er gibt ___ das Buch zurück.",
+    "russian_translation": "Он возвращает ей книгу.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Wir sitzen ___ Tisch.",
+    "russian_translation": "Мы сидим за столом.",
+    "missing_word": "am"
+  },
+  {
+    "german_sentence": "Sie legt ___ Mantel ab.",
+    "russian_translation": "Она снимает своё пальто.",
+    "missing_word": "ihren"
+  },
+  {
+    "german_sentence": "Das Auto parkt ___ Haus.",
+    "russian_translation": "Машина припаркована у дома.",
+    "missing_word": "vor dem"
+  },
+  {
+    "german_sentence": "Er trifft ___ Freunde im Park.",
+    "russian_translation": "Он встречает своих друзей в парке.",
+    "missing_word": "seine"
+  },
+  {
+    "german_sentence": "Die Katze springt ___ Stuhl.",
+    "russian_translation": "Кошка прыгает на стул.",
+    "missing_word": "auf den"
+  },
+  {
+    "german_sentence": "Sie hängt das Bild ___ Wand.",
+    "russian_translation": "Она вешает картину на стену.",
+    "missing_word": "an die"
+  },
+  {
+    "german_sentence": "Wir gehen ___ Freunden ins Kino.",
+    "russian_translation": "Мы идём с друзьями в кино.",
+    "missing_word": "mit unseren"
+  },
+  {
+    "german_sentence": "Er stellt den Stuhl ___ Tisch.",
+    "russian_translation": "Он ставит стул к столу.",
+    "missing_word": "an den"
+  },
+  {
+    "german_sentence": "Sie macht ___ keine Sorgen.",
+    "russian_translation": "Она не беспокоится.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Das Kind geht ___ Schule.",
+    "russian_translation": "Ребёнок идёт в школу.",
+    "missing_word": "zur"
+  },
+  {
+    "german_sentence": "Er schreibt ___ einen Brief.",
+    "russian_translation": "Он пишет ей письмо.",
+    "missing_word": "ihr"
+  },
+  {
+    "german_sentence": "Die Bücher stehen ___ Regal.",
+    "russian_translation": "Книги стоят на полке.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Sie fährt ___ Arbeit.",
+    "russian_translation": "Она едет на работу.",
+    "missing_word": "zur"
+  },
+  {
+    "german_sentence": "Das Telefon liegt ___ Bett.",
+    "russian_translation": "Телефон лежит на кровати.",
+    "missing_word": "auf dem"
+  },
+  {
+    "german_sentence": "Wir besuchen ___ Großeltern.",
+    "russian_translation": "Мы навещаем наших бабушку и дедушку.",
+    "missing_word": "unsere"
+  },
+  {
+    "german_sentence": "Er putzt ___ die Zähne.",
+    "russian_translation": "Он чистит зубы.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie stellt die Schuhe ___ Schrank.",
+    "russian_translation": "Она ставит обувь в шкаф.",
+    "missing_word": "in den"
+  },
+  {
+    "german_sentence": "Das Geschenk ist ___ Mutter.",
+    "russian_translation": "Подарок для мамы.",
+    "missing_word": "für die"
+  },
+  {
+    "german_sentence": "Er lehnt ___ an die Wand.",
+    "russian_translation": "Он опирается о стену.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Sie spricht mit ___ über das Projekt.",
+    "russian_translation": "Она говорит с ним о проекте.",
+    "missing_word": "ihm"
+  },
+  {
+    "german_sentence": "Das Paket liegt ___ Tür.",
+    "russian_translation": "Пакет лежит у двери.",
+    "missing_word": "vor der"
+  },
+  {
+    "german_sentence": "Wir warten ___ Bus.",
+    "russian_translation": "Мы ждём автобус.",
+    "missing_word": "auf den"
+  },
+  {
+    "german_sentence": "Er gibt ___ Schlüssel.",
+    "russian_translation": "Он даёт ключ.",
+    "missing_word": "den"
+  },
+  {
+    "german_sentence": "Sie schaut ___ Fenster hinaus.",
+    "russian_translation": "Она смотрит из окна.",
+    "missing_word": "zum"
+  },
+  {
+    "german_sentence": "Das Kind läuft ___ Mutter.",
+    "russian_translation": "Ребёнок бежит к маме.",
+    "missing_word": "zur"
+  },
+  {
+    "german_sentence": "Er nimmt ___ Buch mit.",
+    "russian_translation": "Он берёт с собой книгу.",
+    "missing_word": "das"
+  },
+  {
+    "german_sentence": "Sie setzt ___ auf die Bank.",
+    "russian_translation": "Она садится на скамейку.",
+    "missing_word": "sich"
+  },
+  {
+    "german_sentence": "Das Foto steht ___ Regal.",
+    "russian_translation": "Фотография стоит на полке.",
+    "missing_word": "im"
+  },
+  {
+    "german_sentence": "Wir fahren ___ Flughafen.",
+    "russian_translation": "Мы едем в аэропорт.",
+    "missing_word": "zum"
+  },
+  {
+    "german_sentence": "Er denkt ___ Zukunft.",
+    "russian_translation": "Он думает о будущем.",
+    "missing_word": "an die"
+  },
+  {
+    "german_sentence": "Sie geht ___ Bäcker.",
+    "russian_translation": "Она идёт к пекарю.",
+    "missing_word": "zum"
+  }
 ]
