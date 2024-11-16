@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub const CHATGPT_MODEL: &str = "gpt-4o";
+pub const CHATGPT_API_URL: &str = "https://api.openai.com/v1/chat/completions";
+
 pub const RUSSIAN_TO_GERMAN_PROMPT: &str = r#"You are a Russian-German translator. 
 Simply translate the given Russian word or phrase to German without any additional information."#;
 
@@ -166,4 +169,26 @@ pub struct ClaudeContent {
     #[serde(rename = "type")]
     pub content_type: String,
     pub text: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatGPTRequest {
+    pub model: String,
+    pub messages: Vec<ChatGPTMessage>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatGPTMessage {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatGPTResponse {
+    pub choices: Vec<ChatGPTChoice>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatGPTChoice {
+    pub message: ChatGPTMessage,
 }

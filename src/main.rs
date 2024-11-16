@@ -1,10 +1,10 @@
+mod ai;
 mod commands_messages;
+mod consts;
 mod input;
 mod practice;
-mod ai;
-mod translation;
-mod consts;
 mod story;
+mod translation;
 
 use commands_messages::{handle_command, handle_document, handle_message, Command, DeleteMode};
 use practice::PracticeSession;
@@ -31,10 +31,12 @@ async fn main() {
     let (shutdown_tx, _) = broadcast::channel(1);
     let sessions: PracticeSessions = Arc::new(Mutex::new(HashMap::new()));
     let delete_mode: DeleteMode = Arc::new(Mutex::new(HashSet::new()));
+    let use_chatgpt = Arc::new(Mutex::new(true));
 
     let shutdown_tx_clone = shutdown_tx.clone();
     let sessions_clone = sessions.clone();
     let delete_mode_clone = delete_mode.clone();
+    let use_chatgpt_clone = use_chatgpt.clone();
 
     let message_handler = Update::filter_message()
         .branch(dptree::entry().filter_command::<Command>().endpoint(
@@ -42,9 +44,18 @@ async fn main() {
                 let shutdown = shutdown_tx_clone.clone();
                 let sessions = sessions_clone.clone();
                 let delete_mode = delete_mode_clone.clone();
+                let use_chatgpt = use_chatgpt_clone.clone();
                 async move {
-                    if let Err(e) =
-                        handle_command(&bot, &msg, cmd, &shutdown, &sessions, &delete_mode).await
+                    if let Err(e) = handle_command(
+                        &bot,
+                        &msg,
+                        cmd,
+                        &shutdown,
+                        &sessions,
+                        &delete_mode,
+                        &use_chatgpt,
+                    )
+                    .await
                     {
                         log::error!("Error: {:?}", e);
                     }
@@ -67,8 +78,11 @@ async fn main() {
                 move |bot: Bot, msg: Message| {
                     let sessions = sessions.clone();
                     let delete_mode = delete_mode.clone();
+                    let use_chatgpt = use_chatgpt.clone();
                     async move {
-                        if let Err(e) = handle_message(&bot, &msg, &sessions, &delete_mode).await {
+                        if let Err(e) =
+                            handle_message(&bot, &msg, &sessions, &delete_mode, &use_chatgpt).await
+                        {
                             log::error!("Error: {:?}", e);
                         }
                         ResponseResult::Ok(())

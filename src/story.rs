@@ -46,7 +46,7 @@ pub fn get_german_words() -> Result<Vec<String>> {
     Ok(words)
 }
 
-pub async fn generate_story() -> Result<String> {
+pub async fn generate_story(use_chatgpt: bool) -> Result<String> {
     let words = get_german_words()?;
     let selected_words = select_random_words(&words, 100);
 
@@ -54,5 +54,5 @@ pub async fn generate_story() -> Result<String> {
         "STORY_GENERATION:{}",
         STORY_PROMPT.replace("{word list}", &selected_words.join(", "))
     );
-    translate_text(&prompt).await
+    translate_text(&prompt, use_chatgpt).await
 }

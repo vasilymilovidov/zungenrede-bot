@@ -8,7 +8,7 @@ use teloxide::{
     types::{InputFile, Message},
     Bot,
 };
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, Mutex};
 
 use crate::{
     consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE}, input::{analyze_input, InputType}, practice::{check_practice_answer, start_practice_session, stop_practice_session}, story::generate_story, translation::{
@@ -51,6 +51,10 @@ pub enum Command {
     Stats(String),
     #[command(description = "generate a short story in German")]
     Story,
+    #[command(description = "switch to ChatGPT")]
+    UseChatGPT,
+    #[command(description = "switch to Claude")]
+    UseClaude,
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -94,6 +98,7 @@ pub async fn handle_command(
     shutdown: &broadcast::Sender<()>,
     sessions: &PracticeSessions,
     delete_mode: &DeleteMode,
+    use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -179,7 +184,8 @@ pub async fn handle_command(
         Command::Story => {
             bot.send_message(msg.chat.id, "Generating a story...")
                 .await?;
-            match generate_story().await {
+            let use_chatgpt = *use_chatgpt.lock().await;
+            match generate_story(use_chatgpt).await {
                 Ok(story) => {
                     bot.send_message(msg.chat.id, story).await?;
                 }
@@ -188,6 +194,16 @@ pub async fn handle_command(
                         .await?;
                 }
             }
+        }
+        Command::UseChatGPT => {
+            let mut use_chatgpt = use_chatgpt.lock().await;
+            *use_chatgpt = true;
+            bot.send_message(msg.chat.id, "Switched to ChatGPT.").await?;
+        }
+        Command::UseClaude => {
+            let mut use_chatgpt = use_chatgpt.lock().await;
+            *use_chatgpt = false;
+            bot.send_message(msg.chat.id, "Switched to Claude.").await?;
         }
     }
     Ok(())
@@ -198,6 +214,7 @@ pub async fn handle_message(
     msg: &Message,
     sessions: &PracticeSessions,
     delete_mode: &DeleteMode,
+    use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -260,11 +277,12 @@ pub async fn handle_message(
                 None
             };
 
+            let use_chatgpt = *use_chatgpt.lock().await;
             let claude_response = if let Some(context) = context {
                 let combined_text = format!("Context: {}\nQuery: {}", context, text);
-                translate_text(&combined_text).await?
+                translate_text(&combined_text, use_chatgpt).await?
             } else {
-                translate_text(text).await?
+                translate_text(text, use_chatgpt).await?
             };
 
             let response = match input_type {

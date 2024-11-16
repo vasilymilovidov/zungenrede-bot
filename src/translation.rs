@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ai::{
-        ClaudeMessage, ClaudeRequest, ClaudeResponse, CONTEXT_PROMPT, EXPLANATION_PROMPT,
-        FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT,
-        RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT,
+        ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest, ClaudeResponse, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT
     },
     input::{analyze_input, InputType},
 };
@@ -113,21 +111,91 @@ pub fn get_weighted_translation(translations: &[Translation]) -> Option<Translat
     Some(translations[0].clone())
 }
 
-pub async fn translate_text(text: &str) -> Result<String> {
-    let api_key =
-        env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
+pub async fn translate_text(text: &str, use_chatgpt: bool) -> Result<String> {
+    if use_chatgpt {
+        translate_with_chatgpt(text).await
+    } else {
+        translate_with_claude(text).await
+    }
+}
+
+async fn translate_with_claude(text: &str) -> Result<String> {
+    let api_key = env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
 
     let client = reqwest::Client::new();
 
-    let (system_prompt, processed_text) = if text.starts_with("STORY_GENERATION:") {
-        // Special case for story generation
+    let (system_prompt, processed_text) = prepare_prompt(text);
+
+    let messages = vec![ClaudeMessage {
+        role: "user".to_string(),
+        content: if processed_text.is_empty() {
+            system_prompt
+        } else {
+            format!("{}\n\n{}", system_prompt, processed_text)
+        },
+    }];
+
+    let request = ClaudeRequest {
+        model: "claude-3-5-sonnet-20241022".to_string(),
+        max_tokens: 4000,
+        messages,
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await?
+        .json::<ClaudeResponse>()
+        .await?;
+
+    Ok(response.content[0].text.clone())
+}
+
+async fn translate_with_chatgpt(text: &str) -> Result<String> {
+    let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY environment variable not set");
+
+    let client = reqwest::Client::new();
+
+    let (system_prompt, processed_text) = prepare_prompt(text);
+
+    let messages = vec![ChatGPTMessage {
+        role: "user".to_string(),
+        content: if processed_text.is_empty() {
+            system_prompt
+        } else {
+            format!("{}\n\n{}", system_prompt, processed_text)
+        },
+    }];
+
+    let request = ChatGPTRequest {
+        model: CHATGPT_MODEL.to_string(),
+        messages,
+    };
+
+    let response = client
+        .post(CHATGPT_API_URL)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&request)
+        .send()
+        .await?
+        .json::<ChatGPTResponse>()
+        .await?;
+
+    Ok(response.choices[0].message.content.clone())
+}
+
+fn prepare_prompt(text: &str) -> (String, &str) {
+    if text.starts_with("STORY_GENERATION:") {
         (text.trim_start_matches("STORY_GENERATION:").to_string(), "")
     } else if text.starts_with("Context: ") {
-        // Handle contextual query
         let parts: Vec<&str> = text.splitn(2, "Query: ").collect();
         let context = parts[0].trim_start_matches("Context: ").trim();
         let query = parts.get(1).unwrap_or(&"").trim();
-
         (CONTEXT_PROMPT.replace("{context}", context), query)
     } else {
         match analyze_input(text) {
@@ -163,35 +231,7 @@ pub async fn translate_text(text: &str) -> Result<String> {
                 (prompt.to_string(), text)
             }
         }
-    };
-
-    let messages = vec![ClaudeMessage {
-        role: "user".to_string(),
-        content: if processed_text.is_empty() {
-            system_prompt
-        } else {
-            format!("{}\n\n{}", system_prompt, processed_text)
-        },
-    }];
-
-    let request = ClaudeRequest {
-        model: "claude-3-5-sonnet-20241022".to_string(),
-        max_tokens: 4000,
-        messages,
-    };
-
-    let response = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&request)
-        .send()
-        .await?
-        .json::<ClaudeResponse>()
-        .await?;
-
-    Ok(response.content[0].text.clone())
+    }
 }
 
 pub fn add_translation(translation: Translation) -> Result<()> {
