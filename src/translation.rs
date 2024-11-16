@@ -3,40 +3,15 @@ use std::{env, fs};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    input::{analyze_input, InputType},
-    promts_consts::{
-        CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT,
-        GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT,
-        SIMPLIFY_PROMPT, STORY_PROMPT,
+    ai::{
+        ClaudeMessage, ClaudeRequest, ClaudeResponse, CONTEXT_PROMPT, EXPLANATION_PROMPT,
+        FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT,
+        RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT,
     },
+    input::{analyze_input, InputType},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ClaudeRequest {
-    model: String,
-    max_tokens: u32,
-    messages: Vec<ClaudeMessage>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ClaudeMessage {
-    role: String,
-    content: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ClaudeResponse {
-    content: Vec<ClaudeContent>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ClaudeContent {
-    #[serde(rename = "type")]
-    content_type: String,
-    text: String,
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Translation {
@@ -468,60 +443,4 @@ pub fn format_translation_response(translation: &Translation) -> String {
     }
 
     response
-}
-
-pub fn get_german_words() -> Result<Vec<String>> {
-    let translations = read_translations()?;
-    let mut words = Vec::new();
-
-    for translation in translations {
-        // Add the original German word
-        if !translation.original.contains(' ') {
-            words.push(translation.original);
-        } else {
-            // For compound words (like "der Hund"), take the last part
-            if let Some(word) = translation.original.split_whitespace().last() {
-                words.push(word.to_string());
-            }
-        }
-
-        // Add words from examples
-        for example in translation.examples {
-            words.extend(
-                example
-                    .german
-                    .split_whitespace()
-                    .filter(|w| w.chars().next().map_or(false, |c| c.is_uppercase()))
-                    .map(|w| w.trim_matches(|c: char| !c.is_alphabetic()).to_string()),
-            );
-        }
-    }
-
-    // Remove duplicates
-    words.sort();
-    words.dedup();
-
-    Ok(words)
-}
-
-pub fn select_random_words(words: &[String], count: usize) -> Vec<String> {
-    use rand::seq::IteratorRandom;
-    let mut rng = rand::thread_rng();
-    words
-        .iter()
-        .choose_multiple(&mut rng, count.min(words.len()))
-        .into_iter()
-        .cloned()
-        .collect()
-}
-
-pub async fn generate_story() -> Result<String> {
-    let words = get_german_words()?;
-    let selected_words = select_random_words(&words, 100);
-
-    let prompt = format!(
-        "STORY_GENERATION:{}",
-        STORY_PROMPT.replace("{word list}", &selected_words.join(", "))
-    );
-    translate_text(&prompt).await
 }

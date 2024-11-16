@@ -11,15 +11,11 @@ use teloxide::{
 use tokio::sync::broadcast;
 
 use crate::{
-    input::{analyze_input, InputType},
-    practice::{check_practice_answer, start_practice_session, stop_practice_session},
-    promts_consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE, WELCOME_MESSAGE},
-    translation::{
+    consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE}, input::{analyze_input, InputType}, practice::{check_practice_answer, start_practice_session, stop_practice_session}, story::generate_story, translation::{
         add_translation, clear_translations, delete_translation, find_translation,
-        format_translation_response, generate_story, get_storage_path, import_translations,
+        format_translation_response, get_storage_path, import_translations,
         parse_translation_response, read_translations, translate_text,
-    },
-    PracticeSessions,
+    }, PracticeSessions
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -81,7 +77,6 @@ async fn is_user_authorized(msg: &Message) -> bool {
         .from
         .map(|u| i64::try_from(u.id.0).unwrap_or(0))
         .unwrap_or(0);
-    // allowed_users.contains(&user_id);
     let is_authorized = allowed_users.contains(&user_id);
     log::info!(
         "Authorization check - User ID: {}, Authorized: {}, Allowed users: {:?}",
@@ -116,7 +111,7 @@ pub async fn handle_command(
             stop_practice_session(bot, msg, sessions).await?;
         }
         Command::Start => {
-            bot.send_message(msg.chat.id, WELCOME_MESSAGE).await?;
+            bot.send_message(msg.chat.id, HELP_MESSAGE).await?;
         }
         Command::Help => {
             bot.send_message(msg.chat.id, HELP_MESSAGE).await?;

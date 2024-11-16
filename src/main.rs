@@ -1,8 +1,10 @@
 mod commands_messages;
 mod input;
 mod practice;
-mod promts_consts;
+mod ai;
 mod translation;
+mod consts;
+mod story;
 
 use commands_messages::{handle_command, handle_document, handle_message, Command, DeleteMode};
 use practice::PracticeSession;

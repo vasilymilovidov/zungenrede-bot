@@ -1,34 +1,4 @@
-pub const WELCOME_MESSAGE: &str = r#"Доступные комманды:
-/start - Запустить бота
-/help - Показать это сообщение
-/export - Экспортировать базу данных переводов
-/practice - Начать практику
-/stop - Остановить практику
-/exit - Остановить бота
-
-Специальные префиксы для запросов:
-!: [запрос] - Проверить грамматику немецкого текста
--: [запрос] - Упростить немецкое предложение
-?: [запрос]  - Объяснить грамматику немецкого текста
-??: [запрос] - Задать вопрос о немецком языке в свободной форме
-
-Как пользоваться:
-• Отправьте немецкое или русское слово для перевода и грамматической справки
-• Отправьте немецкое или русское предложение для перевода
-• Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
-• Испоьзуйте специальные префиксы перед запросом для расширенного функционала
-
-Примеры:
-Wald
-Я люблю гулять
-??: Как использовать Akkusative?
-?: Der Mann isst einen Apfel
-!: Ich habe gestern nach Berlin gefahren
--: Ich würde gerne wissen, ob Sie morgen Zeit haben
-
-Бот автоматически определяет язык ввода и тип запроса."#;
-
-pub const SHUTDOWN_MESSAGE: &str = "Shutting down...";
+use serde::{Deserialize, Serialize};
 
 pub const RUSSIAN_TO_GERMAN_PROMPT: &str = r#"You are a Russian-German translator. 
 Simply translate the given Russian word or phrase to German without any additional information."#;
@@ -136,36 +106,6 @@ pub const CONTEXT_PROMPT: &str = r#"You are a German language expert.
 The following query is about this word/phrase: {context}
 Please answer the query in Russian, providing relevant information about the context word/phrase."#;
 
-pub const HELP_MESSAGE: &str = r#"Доступные комманды:
-/start - Запустить бота
-/help - Показать это сообщение
-/export - Экспортировать базу данных переводов
-/practice - Начать практику
-/stop - Остановить практику
-/exit - Остановить бота
-
-Специальные префиксы для запросов:
-!: [запрос] - Проверить грамматику немецкого текста
--: [запрос] - Упростить немецкое предложение
-?: [запрос]  - Объяснить грамматику немецкого текста
-??: [запрос] - Задать вопрос о немецком языке в свободной форме
-
-Как пользоваться:
-• Отправьте немецкое или русское слово для перевода и грамматической справки
-• Отправьте немецкое или русское предложение для перевода
-• Ответьте на любой перевод вопросом, чтобы получить ответ, учитывающий контекст
-• Испоьзуйте специальные префиксы перед запросом для расширенного функционала
-
-Примеры:
-Wald
-Я люблю гулять
-??: Как использовать Akkusative?
-?: Der Mann isst einen Apfel
-!: Ich habe gestern nach Berlin gefahren
--: Ich würde gerne wissen, ob Sie morgen Zeit haben
-
-Бот автоматически определяет язык ввода и тип запроса."#;
-
 pub const STORY_PROMPT: &str = r#"You are a creative storyteller writing modern German short stories in the style of Éric Rohmer.
 
 Write a short story (maximum 3900 characters) with the following characteristics:
@@ -202,3 +142,28 @@ Title
 Empty line
 Story
 Maximum length: 3900 characters."#;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClaudeRequest {
+    pub model: String,
+    pub max_tokens: u32,
+    pub messages: Vec<ClaudeMessage>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClaudeMessage {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClaudeResponse {
+    pub content: Vec<ClaudeContent>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClaudeContent {
+    #[serde(rename = "type")]
+    pub content_type: String,
+    pub text: String,
+}
