@@ -31,7 +31,7 @@ async fn main() {
     let (shutdown_tx, _) = broadcast::channel(1);
     let sessions: PracticeSessions = Arc::new(Mutex::new(HashMap::new()));
     let delete_mode: DeleteMode = Arc::new(Mutex::new(HashSet::new()));
-    let use_chatgpt = Arc::new(Mutex::new(true));
+    let use_chatgpt = Arc::new(Mutex::new(false));
 
     let shutdown_tx_clone = shutdown_tx.clone();
     let sessions_clone = sessions.clone();

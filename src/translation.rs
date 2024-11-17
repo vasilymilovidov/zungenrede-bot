@@ -4,14 +4,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ai::{
-        ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest, ClaudeResponse, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT
+        ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest,
+        ClaudeResponse, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT,
+        FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT,
+        RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT,
     },
     input::{analyze_input, InputType},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Translation {
     pub original: String,
     pub translation: String,
@@ -22,20 +25,6 @@ pub struct Translation {
     pub correct_answers: u32,
     #[serde(default)]
     pub wrong_answers: u32,
-}
-
-impl Default for Translation {
-    fn default() -> Self {
-        Self {
-            original: String::new(),
-            translation: String::new(),
-            grammar_forms: Vec::new(),
-            conjugations: None,
-            examples: Vec::new(),
-            correct_answers: 0,
-            wrong_answers: 0,
-        }
-    }
 }
 
 impl Translation {
@@ -120,7 +109,8 @@ pub async fn translate_text(text: &str, use_chatgpt: bool) -> Result<String> {
 }
 
 async fn translate_with_claude(text: &str) -> Result<String> {
-    let api_key = env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
+    let api_key =
+        env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
 
     let client = reqwest::Client::new();
 
@@ -484,3 +474,4 @@ pub fn format_translation_response(translation: &Translation) -> String {
 
     response
 }
+

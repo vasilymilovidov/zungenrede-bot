@@ -29,7 +29,10 @@ impl AnswerCheck {
     fn format_message(&self) -> String {
         let mut message = match &self.result {
             AnswerResult::Correct => "✅ Правильно!".to_string(),
-            AnswerResult::AlmostCorrect { expected, similarity } => {
+            AnswerResult::AlmostCorrect {
+                expected,
+                similarity,
+            } => {
                 format!(
                     "⚠️ Почти правильно! Ожидалось: {}\nПохожесть: {:.0}%",
                     expected,
@@ -45,7 +48,7 @@ impl AnswerCheck {
         };
 
         if !self.feedback.is_empty() {
-            message.push_str("\n");
+            message.push('\n');
             message.push_str(&self.feedback);
         }
 
@@ -105,19 +108,17 @@ fn format_practice_question(translation: &Translation, expecting_russian: bool) 
         } else {
             format!("Переведите на русский:\n👅{}", translation.original)
         }
-    } else {
-        if let Some(first_form) = translation.grammar_forms.first() {
-            if ARTICLES.contains(&first_form.trim()) {
-                format!(
-                    "Переведите на немецкий (не забудьте артикль!):\n👅{}",
-                    translation.translation
-                )
-            } else {
-                format!("Переведите на немецкий:\n👅{}", translation.translation)
-            }
+    } else if let Some(first_form) = translation.grammar_forms.first() {
+        if ARTICLES.contains(&first_form.trim()) {
+            format!(
+                "Переведите на немецкий (не забудьте артикль!):\n👅{}",
+                translation.translation
+            )
         } else {
             format!("Переведите на немецкий:\n👅{}", translation.translation)
         }
+    } else {
+        format!("Переведите на немецкий:\n👅{}", translation.translation)
     }
 }
 
@@ -155,43 +156,51 @@ pub async fn start_practice_session(
                 .ok_or("Failed to get weighted translation")?;
             let expecting_russian = rand::random::<bool>();
             let question = format_practice_question(&translation, expecting_russian);
-            
-            (question, PracticeSession {
-                current_word: translation,
-                current_sentence: None,
-                practice_type,
-                expecting_russian,
-                words_practiced: 0,
-                correct_answers: 0,
-                wrong_answers: 0,
-            })
-        },
+
+            (
+                question,
+                PracticeSession {
+                    current_word: translation,
+                    current_sentence: None,
+                    practice_type,
+                    expecting_russian,
+                    words_practiced: 0,
+                    correct_answers: 0,
+                    wrong_answers: 0,
+                },
+            )
+        }
         PracticeType::SentenceCompletion => {
             let sentence = get_random_sentence(&practice_sentences)
                 .ok_or("Failed to get practice sentence")?;
             let question = format!(
                 "Заполните пропуск правильным словом:\n\n{}\n\nПеревод: {}",
-                sentence.german_sentence,
-                sentence.russian_translation
+                sentence.german_sentence, sentence.russian_translation
             );
-            
-            (question, PracticeSession {
-                current_word: Translation::default(), // You'll need to implement Default for Translation
-                current_sentence: Some(sentence),
-                practice_type,
-                expecting_russian: false,
-                words_practiced: 0,
-                correct_answers: 0,
-                wrong_answers: 0,
-            })
+
+            (
+                question,
+                PracticeSession {
+                    current_word: Translation::default(), // You'll need to implement Default for Translation
+                    current_sentence: Some(sentence),
+                    practice_type,
+                    expecting_russian: false,
+                    words_practiced: 0,
+                    correct_answers: 0,
+                    wrong_answers: 0,
+                },
+            )
         }
     };
 
     let mut sessions = sessions.lock().await;
     sessions.insert(msg.chat.id.0, session);
 
-    bot.send_message(msg.chat.id, "Practice mode started! Use /stop to end practice.")
-        .await?;
+    bot.send_message(
+        msg.chat.id,
+        "Practice mode started! Use /stop to end practice.",
+    )
+    .await?;
     bot.send_message(msg.chat.id, question).await?;
 
     Ok(())
@@ -364,17 +373,22 @@ pub async fn check_practice_answer(
         let answer = msg.text().unwrap_or("").trim();
         let (is_correct, feedback) = match &session.practice_type {
             PracticeType::WordTranslation => {
-                let check_result = check_answer(answer, &session.current_word, session.expecting_russian);
+                let check_result =
+                    check_answer(answer, &session.current_word, session.expecting_russian);
                 let is_correct = matches!(check_result.result, AnswerResult::Correct);
                 (is_correct, check_result.format_message())
-            },
+            }
             PracticeType::SentenceCompletion => {
                 if let Some(sentence) = &session.current_sentence {
-                    let is_correct = answer.trim().to_lowercase() == sentence.missing_word.to_lowercase();
+                    let is_correct =
+                        answer.trim().to_lowercase() == sentence.missing_word.to_lowercase();
                     let feedback = if is_correct {
                         "✅ Правильно!".to_string()
                     } else {
-                        format!("❌ Неправильно! Правильный ответ: {}", sentence.missing_word)
+                        format!(
+                            "❌ Неправильно! Правильный ответ: {}",
+                            sentence.missing_word
+                        )
                     };
                     (is_correct, feedback)
                 } else {
@@ -413,7 +427,7 @@ pub async fn check_practice_answer(
         if is_correct {
             let translations = read_translations()?;
             let practice_sentences = load_practice_sentences()?;
-            
+
             let practice_type = if rand::random() {
                 PracticeType::WordTranslation
             } else {
@@ -432,7 +446,7 @@ pub async fn check_practice_answer(
                     } else {
                         return Ok(());
                     }
-                },
+                }
                 PracticeType::SentenceCompletion => {
                     if let Some(sentence) = get_random_sentence(&practice_sentences) {
                         session.current_sentence = Some(sentence.clone());
@@ -440,8 +454,7 @@ pub async fn check_practice_answer(
                         session.practice_type = practice_type;
                         format!(
                             "Заполните пропуск правильным словом:\n\n{}\n\nПеревод: {}",
-                            sentence.german_sentence,
-                            sentence.russian_translation
+                            sentence.german_sentence, sentence.russian_translation
                         )
                     } else {
                         return Ok(());
@@ -469,7 +482,8 @@ pub async fn stop_practice_session(
         let message = format!("Practice mode stopped!\n{}", stats);
         bot.send_message(msg.chat.id, message).await?;
     } else {
-        bot.send_message(msg.chat.id, "Practice mode stopped!").await?;
+        bot.send_message(msg.chat.id, "Practice mode stopped!")
+            .await?;
     }
     sessions.remove(&msg.chat.id.0);
     Ok(())
@@ -490,3 +504,4 @@ fn format_practice_stats(session: &PracticeSession) -> String {
         accuracy
     )
 }
+

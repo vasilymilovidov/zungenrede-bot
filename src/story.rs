@@ -23,10 +23,8 @@ pub fn get_german_words() -> Result<Vec<String>> {
     for translation in translations {
         if !translation.original.contains(' ') {
             words.push(translation.original);
-        } else {
-            if let Some(word) = translation.original.split_whitespace().last() {
-                words.push(word.to_string());
-            }
+        } else if let Some(word) = translation.original.split_whitespace().last() {
+            words.push(word.to_string());
         }
 
         for example in translation.examples {
@@ -56,3 +54,4 @@ pub async fn generate_story(use_chatgpt: bool) -> Result<String> {
     );
     translate_text(&prompt, use_chatgpt).await
 }
+
