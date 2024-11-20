@@ -1,3 +1,4 @@
 /target
 .env
 translations_storage.json
+.DS_Store
