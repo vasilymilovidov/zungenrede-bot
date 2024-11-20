@@ -39,14 +39,12 @@ const QUESTIONS: [&str; 8] = [
 #[derive(Clone)]
 pub struct TalkSession {
     context: Vec<String>,
-    topics_discussed: Vec<String>,
 }
 
 impl TalkSession {
     fn new() -> Self {
         Self {
             context: Vec::new(),
-            topics_discussed: Vec::new(),
         }
     }
 
