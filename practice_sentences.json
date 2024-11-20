@@ -41,7 +41,7 @@
   },
   {
     "german_sentence": "Sie ist mit ___ Bruder in den Urlaub gefahren.",
-    "russian_translation": "Она поехала в отпуск с братом.",
+    "russian_translation": "Она поехала в отпуск со своим братом.",
     "missing_word": "ihrem"
   },
   {
@@ -61,7 +61,7 @@
   },
   {
     "german_sentence": "Wir treffen ___ Lehrer morgen.",
-    "russian_translation": "Мы встретим учителя завтра.",
+    "russian_translation": "Мы встретим нашего учителя завтра.",
     "missing_word": "unseren"
   },
   {
@@ -81,7 +81,7 @@
   },
   {
     "german_sentence": "Er hat ___ Haus verkauft.",
-    "russian_translation": "Он продал дом.",
+    "russian_translation": "Он продал свой дом.",
     "missing_word": "sein"
   },
   {
@@ -96,7 +96,7 @@
   },
   {
     "german_sentence": "Sie hat ___ Auto reparieren lassen.",
-    "russian_translation": "Она отдала машину в ремонт.",
+    "russian_translation": "Она отдала свою машину в ремонт.",
     "missing_word": "ihr"
   },
   {
@@ -281,7 +281,7 @@
   },
   {
     "german_sentence": "Sie gibt ___ Hund Futter.",
-    "russian_translation": "Она кормит собаку.",
+    "russian_translation": "Она кормит свою собаку.",
     "missing_word": "ihrem"
   },
   {
@@ -296,7 +296,7 @@
   },
   {
     "german_sentence": "Wir fahren nächsten Monat mit ___ Auto in Urlaub.",
-    "russian_translation": "В следующем месяце мы отправляемся в отпуск на машине.",
+    "russian_translation": "В следующем месяце мы отправляемся в отпуск на нашей машине.",
     "missing_word": "unserem"
   },
   {
@@ -331,7 +331,7 @@
   },
   {
     "german_sentence": "Das Paket ist gestern ___ angekommen.",
-    "russian_translation": "Пакет прибыл вчера.",
+    "russian_translation": "Пакет прибыл к нам вчера.",
     "missing_word": "bei uns"
   },
   {
@@ -366,7 +366,7 @@
   },
   {
     "german_sentence": "Er hat das Kapitel in ___ Buch gelesen.",
-    "russian_translation": "Он прочитал главу в книге.",
+    "russian_translation": "Он прочитал главу в этой книге.",
     "missing_word": "diesem"
   },
   {
@@ -866,7 +866,7 @@
   },
   {
     "german_sentence": "Wir gehen ___ Freunden ins Kino.",
-    "russian_translation": "Мы идём с друзьями в кино.",
+    "russian_translation": "Мы идём с нашими друзьями в кино.",
     "missing_word": "mit unseren"
   },
   {
