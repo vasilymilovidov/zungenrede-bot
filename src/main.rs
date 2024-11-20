@@ -4,6 +4,7 @@ mod consts;
 mod input;
 mod practice;
 mod story;
+mod talk;
 mod translation;
 
 use commands_messages::{handle_command, handle_document, handle_message, Command, DeleteMode};
@@ -12,11 +13,13 @@ use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
 };
+use talk::TalkSession;
 use teloxide::prelude::*;
 use tokio::sync::{broadcast, Mutex};
 use translation::get_storage_path;
 
 type PracticeSessions = Arc<Mutex<HashMap<i64, PracticeSession>>>;
+type TalkSessions = Arc<Mutex<HashMap<i64, TalkSession>>>;
 
 #[tokio::main]
 async fn main() {
@@ -30,11 +33,13 @@ async fn main() {
     let bot = Bot::from_env();
     let (shutdown_tx, _) = broadcast::channel(1);
     let sessions: PracticeSessions = Arc::new(Mutex::new(HashMap::new()));
+    let talk_sessions: TalkSessions = Arc::new(Mutex::new(HashMap::new()));
     let delete_mode: DeleteMode = Arc::new(Mutex::new(HashSet::new()));
     let use_chatgpt = Arc::new(Mutex::new(false));
 
     let shutdown_tx_clone = shutdown_tx.clone();
     let sessions_clone = sessions.clone();
+    let talk_sessions_clone = talk_sessions.clone();
     let delete_mode_clone = delete_mode.clone();
     let use_chatgpt_clone = use_chatgpt.clone();
 
@@ -43,6 +48,7 @@ async fn main() {
             move |bot: Bot, msg: Message, cmd: Command| {
                 let shutdown = shutdown_tx_clone.clone();
                 let sessions = sessions_clone.clone();
+                let talk_sessions = talk_sessions_clone.clone();
                 let delete_mode = delete_mode_clone.clone();
                 let use_chatgpt = use_chatgpt_clone.clone();
                 async move {
@@ -52,6 +58,7 @@ async fn main() {
                         cmd,
                         &shutdown,
                         &sessions,
+                        &talk_sessions,
                         &delete_mode,
                         &use_chatgpt,
                     )
@@ -77,11 +84,12 @@ async fn main() {
             dptree::filter(|msg: Message| msg.text().is_some()).endpoint(
                 move |bot: Bot, msg: Message| {
                     let sessions = sessions.clone();
+                    let talk_sessions = talk_sessions.clone();
                     let delete_mode = delete_mode.clone();
                     let use_chatgpt = use_chatgpt.clone();
                     async move {
                         if let Err(e) =
-                            handle_message(&bot, &msg, &sessions, &delete_mode, &use_chatgpt).await
+                            handle_message(&bot, &msg, &sessions, &talk_sessions, &delete_mode, &use_chatgpt).await
                         {
                             log::error!("Error: {:?}", e);
                         }

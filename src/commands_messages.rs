@@ -11,11 +11,17 @@ use teloxide::{
 use tokio::sync::{broadcast, Mutex};
 
 use crate::{
-    consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE}, input::{analyze_input, InputType}, practice::{check_practice_answer, start_practice_session, stop_practice_session}, story::generate_story, translation::{
+    consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE},
+    input::{analyze_input, InputType},
+    practice::{check_practice_answer, start_practice_session, stop_practice_session},
+    story::generate_story,
+    talk::{handle_talk_message, start_talk_session, stop_talk_session, TalkSessions},
+    translation::{
         add_translation, clear_translations, delete_translation, find_translation,
         format_translation_response, get_storage_path, import_translations,
         parse_translation_response, read_translations, translate_text,
-    }, PracticeSessions
+    },
+    PracticeSessions,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -55,6 +61,10 @@ pub enum Command {
     UseChatGPT,
     #[command(description = "switch to Claude")]
     UseClaude,
+    #[command(description = "start talk mode")]
+    Talk,
+    #[command(description = "stop talk mode")]
+    StopTalk,
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -78,7 +88,7 @@ async fn is_user_authorized(msg: &Message) -> bool {
     let allowed_users = get_allowed_users();
     let user_id = msg
         .clone()
-        .from
+        .from()
         .map(|u| i64::try_from(u.id.0).unwrap_or(0))
         .unwrap_or(0);
     let is_authorized = allowed_users.contains(&user_id);
@@ -97,6 +107,7 @@ pub async fn handle_command(
     cmd: Command,
     shutdown: &broadcast::Sender<()>,
     sessions: &PracticeSessions,
+    talk_sessions: &TalkSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
@@ -205,6 +216,12 @@ pub async fn handle_command(
             *use_chatgpt = false;
             bot.send_message(msg.chat.id, "Switched to Claude.").await?;
         }
+        Command::Talk => {
+            start_talk_session(bot, msg, talk_sessions).await?;
+        }
+        Command::StopTalk => {
+            stop_talk_session(bot, msg, talk_sessions).await?;
+        }
     }
     Ok(())
 }
@@ -213,6 +230,7 @@ pub async fn handle_message(
     bot: &Bot,
     msg: &Message,
     sessions: &PracticeSessions,
+    talk_sessions: &TalkSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
@@ -227,11 +245,13 @@ pub async fn handle_message(
 
     if let Some(text) = msg.text() {
         let is_practicing = sessions.lock().await.contains_key(&msg.chat.id.0);
-
+        let is_talking = talk_sessions.lock().await.contains_key(&msg.chat.id.0);
         let is_deleting = delete_mode.lock().await.contains(&msg.chat.id.0);
 
         if is_practicing {
             check_practice_answer(bot, msg, sessions).await?;
+        } else if is_talking {
+            handle_talk_message(bot, msg, talk_sessions, use_chatgpt).await?;
         } else if is_deleting {
             match delete_translation(text) {
                 Ok(true) => {
