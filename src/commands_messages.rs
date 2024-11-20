@@ -14,6 +14,7 @@ use crate::{
     consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE},
     input::{analyze_input, InputType},
     practice::{check_practice_answer, start_practice_session, stop_practice_session},
+    picture::{handle_picture_message, start_picture_session, stop_picture_session, PictureSessions},
     story::generate_story,
     talk::{handle_talk_message, start_talk_session, stop_talk_session, TalkSessions},
     translation::{
@@ -65,6 +66,10 @@ pub enum Command {
     Talk,
     #[command(description = "stop talk mode")]
     StopTalk,
+    #[command(description = "start picture description mode")]
+    Pic,
+    #[command(description = "stop picture description mode")]
+    Stoppic,
 }
 
 fn get_allowed_users() -> Vec<i64> {
@@ -108,6 +113,7 @@ pub async fn handle_command(
     shutdown: &broadcast::Sender<()>,
     sessions: &PracticeSessions,
     talk_sessions: &TalkSessions,
+    picture_sessions: &PictureSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
@@ -222,6 +228,12 @@ pub async fn handle_command(
         Command::StopTalk => {
             stop_talk_session(bot, msg, talk_sessions).await?;
         }
+        Command::Pic => {
+            start_picture_session(bot, msg, picture_sessions).await?;
+        }
+        Command::Stoppic => {
+            stop_picture_session(bot, msg, picture_sessions).await?;
+        }
     }
     Ok(())
 }
@@ -231,6 +243,7 @@ pub async fn handle_message(
     msg: &Message,
     sessions: &PracticeSessions,
     talk_sessions: &TalkSessions,
+    picture_sessions: &PictureSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
@@ -243,15 +256,36 @@ pub async fn handle_message(
         return Ok(());
     }
 
+    let chat_id = msg.chat.id;
+    
+    // Check if user is in picture mode
+    {
+        let picture_lock = picture_sessions.lock().await;
+        if picture_lock.contains_key(&chat_id.0) {
+            drop(picture_lock);
+            handle_picture_message(bot, msg, picture_sessions).await?;
+            return Ok(());
+        }
+    }
+
+    // Check if user is in talk mode
+    {
+        let talk_lock = talk_sessions.lock().await;
+        let is_talking = talk_lock.contains_key(&chat_id.0);
+        drop(talk_lock);
+
+        if is_talking {
+            handle_talk_message(bot, msg, talk_sessions, use_chatgpt).await?;
+            return Ok(());
+        }
+    }
+
     if let Some(text) = msg.text() {
-        let is_practicing = sessions.lock().await.contains_key(&msg.chat.id.0);
-        let is_talking = talk_sessions.lock().await.contains_key(&msg.chat.id.0);
-        let is_deleting = delete_mode.lock().await.contains(&msg.chat.id.0);
+        let is_practicing = sessions.lock().await.contains_key(&chat_id.0);
+        let is_deleting = delete_mode.lock().await.contains(&chat_id.0);
 
         if is_practicing {
             check_practice_answer(bot, msg, sessions).await?;
-        } else if is_talking {
-            handle_talk_message(bot, msg, talk_sessions, use_chatgpt).await?;
         } else if is_deleting {
             match delete_translation(text) {
                 Ok(true) => {
@@ -259,11 +293,11 @@ pub async fn handle_message(
                         .await?;
                 }
                 Ok(false) => {
-                    bot.send_message(msg.chat.id, "❌ Word not found in database.")
+                    bot.send_message(msg.chat.id, "❌ Word not found.")
                         .await?;
                 }
                 Err(e) => {
-                    bot.send_message(msg.chat.id, format!("❌ Error deleting word: {}", e))
+                    bot.send_message(msg.chat.id, format!("❌ Error: {}", e))
                         .await?;
                 }
             }
