@@ -33,8 +33,9 @@ struct PixabayResponse {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct PixabayImage {
-    webformatURL: String,
+    webformat_url: String,
 }
 
 async fn fetch_random_image() -> Result<String> {
@@ -47,7 +48,7 @@ async fn fetch_random_image() -> Result<String> {
     let response = reqwest::get(&url).await?.json::<PixabayResponse>().await?;
     
     if let Some(image) = response.hits.choose(&mut rand::thread_rng()) {
-        Ok(image.webformatURL.clone())
+        Ok(image.webformat_url.clone())
     } else {
         Err("No images found".into())
     }
