@@ -28,13 +28,8 @@ impl PictureSession {
 pub type PictureSessions = Arc<Mutex<HashMap<i64, PictureSession>>>;
 
 #[derive(Deserialize)]
-struct PixabayResponse {
-    hits: Vec<PixabayImage>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct PixabayImage {
+    #[serde(rename = "webformatURL")]
     webformat_url: String,
 }
 
@@ -158,4 +153,9 @@ pub async fn handle_picture_message(
     }
 
     Ok(())
+}
+
+#[derive(Deserialize)]
+struct PixabayResponse {
+    hits: Vec<PixabayImage>,
 }
