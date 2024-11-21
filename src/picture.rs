@@ -4,13 +4,14 @@ use teloxide::{payloads::SendPhotoSetters, prelude::Requester, types::{InputFile
 use tokio::sync::Mutex;
 use serde::Deserialize;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use url::Url;
 
 use crate::ai::{ClaudeMessage, ClaudeRequest, ClaudeResponse};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-const GRAMMAR_CHECK_PROMPT: &str = "Du bist ein deutscher Sprachlehrer. Überprüfe die folgende Bildbeschreibung auf grammatikalische Fehler und verbessere sie. Erkläre die Korrekturen. Hier ist die Beschreibung:\n\n";
+const GRAMMAR_CHECK_PROMPT: &str = "Ты преподаватель немецкого. Проверь следующее описание фотографии на предмет грамматических ошибок и поправь их. Вот описание:\n\n";
 
 #[derive(Clone)]
 pub struct PictureSession {
@@ -33,20 +34,28 @@ struct PixabayImage {
     webformat_url: String,
 }
 
+fn get_random_search_params() -> (String, u32) {
+    let mut rng = rand::thread_rng();
+    let search_term = SEARCH_TERMS.choose(&mut rng).unwrap().to_string();
+    let page = rng.gen_range(1..=5);
+    (search_term, page)
+}
+
 async fn fetch_random_image() -> Result<String> {
     let api_key = std::env::var("PIXABAY_API_KEY")?;
+    let (search_term, page) = get_random_search_params();
+    
     let url = format!(
-        "https://pixabay.com/api/?key={}&q=people&image_type=photo&category=people&safesearch=true",
-        api_key
+        "https://pixabay.com/api/?key={}&q={}&image_type=photo&safesearch=true&order=random&page={}&per_page=50",
+        api_key, search_term, page
     );
     
     let response = reqwest::get(&url).await?.json::<PixabayResponse>().await?;
     
-    if let Some(image) = response.hits.choose(&mut rand::thread_rng()) {
-        Ok(image.webformat_url.clone())
-    } else {
-        Err("No images found".into())
-    }
+    response.hits
+        .choose(&mut rand::thread_rng())
+        .map(|image| image.webformat_url.clone())
+        .ok_or_else(|| "No images found".into())
 }
 
 async fn check_grammar(description: &str) -> Result<String> {
@@ -159,3 +168,8 @@ pub async fn handle_picture_message(
 struct PixabayResponse {
     hits: Vec<PixabayImage>,
 }
+
+const SEARCH_TERMS: &[&str] = &[
+    "people", "city", "nature", "food", "animal", "travel",
+    "building", "work", "sport", "family", "garden", "market"
+];
