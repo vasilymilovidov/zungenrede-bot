@@ -4,10 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ai::{
-        ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest,
-        ClaudeResponse, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT,
-        FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT,
-        RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT,
+        make_claude_request, ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT
     },
     input::{analyze_input, InputType},
 };
@@ -109,11 +106,6 @@ pub async fn translate_text(text: &str, use_chatgpt: bool) -> Result<String> {
 }
 
 async fn translate_with_claude(text: &str) -> Result<String> {
-    let api_key =
-        env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
-
-    let client = reqwest::Client::new();
-
     let (system_prompt, processed_text) = prepare_prompt(text);
 
     let messages = vec![ClaudeMessage {
@@ -126,22 +118,12 @@ async fn translate_with_claude(text: &str) -> Result<String> {
     }];
 
     let request = ClaudeRequest {
-        model: "claude-3-5-sonnet-20241022".to_string(),
+        model: "claude-3-sonnet-20240229".to_string(),
         max_tokens: 4000,
         messages,
     };
 
-    let response = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&request)
-        .send()
-        .await?
-        .json::<ClaudeResponse>()
-        .await?;
-
+    let response = make_claude_request(&request).await?;
     Ok(response.content[0].text.clone())
 }
 
@@ -474,4 +456,3 @@ pub fn format_translation_response(translation: &Translation) -> String {
 
     response
 }
-

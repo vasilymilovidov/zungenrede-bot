@@ -1,4 +1,8 @@
 use serde::{Deserialize, Serialize};
+use reqwest;
+use tokio;
+use log;
+use rand;
 
 pub const CHATGPT_MODEL: &str = "gpt-4o";
 pub const CHATGPT_API_URL: &str = "https://api.openai.com/v1/chat/completions";
@@ -163,6 +167,10 @@ Previous conversation:
 
 User message: {message}"#;
 
+const MAX_RETRIES: u32 = 5;
+const INITIAL_BACKOFF_MS: u64 = 1000;
+const MAX_BACKOFF_MS: u64 = 32000;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClaudeRequest {
     pub model: String,
@@ -183,9 +191,64 @@ pub struct ClaudeResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClaudeContent {
-    #[serde(rename = "type")]
-    pub content_type: String,
     pub text: String,
+    pub r#type: String,
+}
+
+pub async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeResponse, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")?;
+    
+    let mut current_retry = 0;
+    let mut backoff_ms = INITIAL_BACKOFF_MS;
+
+    loop {
+        let response = client
+            .post("https://api.anthropic.com/v1/messages")
+            .header("x-api-key", &anthropic_api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("content-type", "application/json")
+            .json(request)
+            .send()
+            .await?;
+
+        let status = response.status();
+        
+        if status.is_success() {
+            return Ok(response.json::<ClaudeResponse>().await?);
+        }
+
+        // If we get a 529 (or other 5xx) error
+        if status.is_server_error() {
+            if current_retry >= MAX_RETRIES {
+                return Err(format!("Max retries ({}) exceeded", MAX_RETRIES).into());
+            }
+
+            // Calculate exponential backoff with jitter
+            let jitter = rand::random::<u64>() % 1000;
+            let sleep_duration = std::cmp::min(
+                backoff_ms + jitter,
+                MAX_BACKOFF_MS
+            );
+
+            log::info!(
+                "Claude API request failed with status {}. Retrying in {} ms (attempt {}/{})",
+                status,
+                sleep_duration,
+                current_retry + 1,
+                MAX_RETRIES
+            );
+
+            tokio::time::sleep(std::time::Duration::from_millis(sleep_duration)).await;
+            
+            current_retry += 1;
+            backoff_ms *= 2;
+            continue;
+        }
+
+        // For other errors, return immediately
+        return Err(format!("Claude API request failed with status: {}", status).into());
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

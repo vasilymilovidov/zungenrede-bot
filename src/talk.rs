@@ -63,10 +63,25 @@ impl TalkSession {
 
 pub type TalkSessions = Arc<Mutex<HashMap<i64, TalkSession>>>;
 
-async fn talk_with_claude(context: &str, message: &str) -> Result<String> {
+async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeResponse> {
     let api_key = env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
     let client = reqwest::Client::new();
 
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(request)
+        .send()
+        .await?
+        .json::<ClaudeResponse>()
+        .await?;
+
+    Ok(response)
+}
+
+async fn talk_with_claude(context: &str, message: &str) -> Result<String> {
     let prompt = TALK_MODE_PROMPT
         .replace("{context}", context)
         .replace("{message}", message);
@@ -82,17 +97,7 @@ async fn talk_with_claude(context: &str, message: &str) -> Result<String> {
         messages,
     };
 
-    let response = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&request)
-        .send()
-        .await?
-        .json::<ClaudeResponse>()
-        .await?;
-
+    let response = make_claude_request(&request).await?;
     Ok(response.content[0].text.clone())
 }
 

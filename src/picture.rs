@@ -7,7 +7,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use url::Url;
 
-use crate::ai::{ClaudeMessage, ClaudeRequest, ClaudeResponse};
+use crate::ai::{make_claude_request, ClaudeMessage, ClaudeRequest};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -70,19 +70,7 @@ async fn check_grammar(description: &str) -> Result<String> {
         }],
     };
 
-    let client = reqwest::Client::new();
-    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")?;
-    
-    let response = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", anthropic_api_key)
-        .header("anthropic-version", "2023-06-01")
-        .json(&request)
-        .send()
-        .await?
-        .json::<ClaudeResponse>()
-        .await?;
-
+    let response = make_claude_request(&request).await?;
     Ok(response.content[0].text.clone())
 }
 
