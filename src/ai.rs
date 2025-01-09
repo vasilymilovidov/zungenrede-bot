@@ -1,10 +1,6 @@
 use serde::{Deserialize, Serialize};
-use reqwest;
-use tokio;
-use log;
-use rand;
 
-pub const CHATGPT_MODEL: &str = "gpt-4o";
+pub const CHATGPT_MODEL: &str = "gpt-4o-latest";
 pub const CHATGPT_API_URL: &str = "https://api.openai.com/v1/chat/completions";
 
 pub const RUSSIAN_TO_GERMAN_PROMPT: &str = r#"You are a Russian-German translator. 
@@ -195,10 +191,12 @@ pub struct ClaudeContent {
     pub r#type: String,
 }
 
-pub async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeResponse, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn make_claude_request(
+    request: &ClaudeRequest,
+) -> Result<ClaudeResponse, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
     let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")?;
-    
+
     let mut current_retry = 0;
     let mut backoff_ms = INITIAL_BACKOFF_MS;
 
@@ -213,7 +211,7 @@ pub async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeRespon
             .await?;
 
         let status = response.status();
-        
+
         if status.is_success() {
             return Ok(response.json::<ClaudeResponse>().await?);
         }
@@ -226,10 +224,7 @@ pub async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeRespon
 
             // Calculate exponential backoff with jitter
             let jitter = rand::random::<u64>() % 1000;
-            let sleep_duration = std::cmp::min(
-                backoff_ms + jitter,
-                MAX_BACKOFF_MS
-            );
+            let sleep_duration = std::cmp::min(backoff_ms + jitter, MAX_BACKOFF_MS);
 
             log::info!(
                 "Claude API request failed with status {}. Retrying in {} ms (attempt {}/{})",
@@ -240,7 +235,7 @@ pub async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeRespon
             );
 
             tokio::time::sleep(std::time::Duration::from_millis(sleep_duration)).await;
-            
+
             current_retry += 1;
             backoff_ms *= 2;
             continue;

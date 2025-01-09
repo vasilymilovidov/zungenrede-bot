@@ -1,28 +1,25 @@
+use rand::seq::SliceRandom;
 use std::collections::HashMap;
 use std::sync::Arc;
 use teloxide::{prelude::Requester, types::Message, Bot};
 use tokio::sync::Mutex;
-use rand::seq::SliceRandom;
 
-use crate::ai::{TALK_MODE_PROMPT, ClaudeMessage, ClaudeRequest, ClaudeResponse, ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, CHATGPT_MODEL, CHATGPT_API_URL};
+use crate::ai::{
+    ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage, ClaudeRequest, ClaudeResponse,
+    CHATGPT_API_URL, CHATGPT_MODEL, TALK_MODE_PROMPT,
+};
 use std::env;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-const GREETINGS: [&str; 5] = [
-    "Hallo!",
-    "Hi!",
-    "Guten Tag!",
-    "Servus!",
-    "Grüß dich!"
-];
+const GREETINGS: [&str; 5] = ["Hallo!", "Hi!", "Guten Tag!", "Servus!", "Grüß dich!"];
 
 const INTRODUCTIONS: [&str; 5] = [
     "Ich freue mich, mit dir auf Deutsch zu sprechen.",
     "Schön, dass wir uns unterhalten können.",
     "Ich bin gespannt, dich kennenzulernen.",
     "Lass uns ein bisschen plaudern.",
-    "Ich würde gerne mehr über dich erfahren."
+    "Ich würde gerne mehr über dich erfahren.",
 ];
 
 const QUESTIONS: [&str; 8] = [
@@ -33,7 +30,7 @@ const QUESTIONS: [&str; 8] = [
     "Wie sieht ein typischer Tag bei dir aus?",
     "Was sind deine Lieblingsorte in deiner Stadt?",
     "Hast du besondere Pläne für die nächsten Wochen?",
-    "Was machst du gerne in deiner Freizeit?"
+    "Was machst du gerne in deiner Freizeit?",
 ];
 
 #[derive(Clone)]
@@ -64,7 +61,8 @@ impl TalkSession {
 pub type TalkSessions = Arc<Mutex<HashMap<i64, TalkSession>>>;
 
 async fn make_claude_request(request: &ClaudeRequest) -> Result<ClaudeResponse> {
-    let api_key = env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
+    let api_key =
+        env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY environment variable not set");
     let client = reqwest::Client::new();
 
     let response = client
@@ -92,7 +90,7 @@ async fn talk_with_claude(context: &str, message: &str) -> Result<String> {
     }];
 
     let request = ClaudeRequest {
-        model: "claude-3-sonnet-20240229".to_string(),
+        model: "claude-3-5-sonnet-20241022".to_string(),
         max_tokens: 4000,
         messages,
     };
@@ -142,13 +140,9 @@ fn generate_initial_prompt() -> String {
     )
 }
 
-pub async fn start_talk_session(
-    bot: &Bot,
-    msg: &Message,
-    sessions: &TalkSessions,
-) -> Result<()> {
+pub async fn start_talk_session(bot: &Bot, msg: &Message, sessions: &TalkSessions) -> Result<()> {
     let mut sessions = sessions.lock().await;
-    
+
     if sessions.contains_key(&msg.chat.id.0) {
         bot.send_message(msg.chat.id, "Du bist bereits im Gesprächsmodus!")
             .await?;
@@ -160,17 +154,13 @@ pub async fn start_talk_session(
     session.add_message(&initial_prompt);
     sessions.insert(msg.chat.id.0, session);
     bot.send_message(msg.chat.id, initial_prompt).await?;
-    
+
     Ok(())
 }
 
-pub async fn stop_talk_session(
-    bot: &Bot,
-    msg: &Message,
-    sessions: &TalkSessions,
-) -> Result<()> {
+pub async fn stop_talk_session(bot: &Bot, msg: &Message, sessions: &TalkSessions) -> Result<()> {
     let mut sessions = sessions.lock().await;
-    
+
     if sessions.remove(&msg.chat.id.0).is_some() {
         bot.send_message(
             msg.chat.id,
@@ -181,7 +171,7 @@ pub async fn stop_talk_session(
         bot.send_message(msg.chat.id, "Du bist nicht im Gesprächsmodus!")
             .await?;
     }
-    
+
     Ok(())
 }
 
@@ -192,22 +182,22 @@ pub async fn handle_talk_message(
     use_chatgpt: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     let mut sessions = sessions.lock().await;
-    
+
     if let Some(session) = sessions.get_mut(&msg.chat.id.0) {
         if let Some(text) = msg.text() {
             session.add_message(text);
-            
+
             let use_chatgpt = *use_chatgpt.lock().await;
             let response = if use_chatgpt {
                 talk_with_chatgpt(&session.get_context(), text).await?
             } else {
                 talk_with_claude(&session.get_context(), text).await?
             };
-            
+
             session.add_message(&response);
             bot.send_message(msg.chat.id, response).await?;
         }
     }
-    
+
     Ok(())
 }
