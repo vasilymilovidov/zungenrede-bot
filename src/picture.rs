@@ -1,10 +1,15 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use teloxide::{payloads::SendPhotoSetters, prelude::Requester, types::{InputFile, Message}, Bot};
-use tokio::sync::Mutex;
-use serde::Deserialize;
 use rand::seq::SliceRandom;
 use rand::Rng;
+use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::Arc;
+use teloxide::{
+    payloads::SendPhotoSetters,
+    prelude::Requester,
+    types::{InputFile, Message},
+    Bot,
+};
+use tokio::sync::Mutex;
 use url::Url;
 
 use crate::ai::{make_claude_request, ClaudeMessage, ClaudeRequest};
@@ -44,15 +49,16 @@ fn get_random_search_params() -> (String, u32) {
 async fn fetch_random_image() -> Result<String> {
     let api_key = std::env::var("PIXABAY_API_KEY")?;
     let (search_term, page) = get_random_search_params();
-    
+
     let url = format!(
         "https://pixabay.com/api/?key={}&q={}&image_type=photo&safesearch=true&order=random&page={}&per_page=50",
         api_key, search_term, page
     );
-    
+
     let response = reqwest::get(&url).await?.json::<PixabayResponse>().await?;
-    
-    response.hits
+
+    response
+        .hits
         .choose(&mut rand::thread_rng())
         .map(|image| image.webformat_url.clone())
         .ok_or_else(|| "No images found".into())
@@ -60,9 +66,9 @@ async fn fetch_random_image() -> Result<String> {
 
 async fn check_grammar(description: &str) -> Result<String> {
     let prompt = format!("{}{}", GRAMMAR_CHECK_PROMPT, description);
-    
+
     let request = ClaudeRequest {
-        model: "claude-3-opus-20240229".to_string(),
+        model: "claude-3-5-sonnet-20241022".to_string(),
         max_tokens: 1000,
         messages: vec![ClaudeMessage {
             role: "user".to_string(),
@@ -93,7 +99,7 @@ pub async fn start_picture_session(
 
     let image_url = fetch_random_image().await?;
     let url = Url::parse(&image_url)?;
-    
+
     bot.send_photo(msg.chat.id, InputFile::url(url))
         .caption("Bitte beschreibe dieses Bild auf Deutsch. Was siehst du? Was passiert im Bild?")
         .await?;
@@ -158,6 +164,6 @@ struct PixabayResponse {
 }
 
 const SEARCH_TERMS: &[&str] = &[
-    "people", "city", "nature", "food", "animal", "travel",
-    "building", "work", "sport", "family", "garden", "market"
+    "people", "city", "nature", "food", "animal", "travel", "building", "work", "sport", "family",
+    "garden", "market",
 ];
