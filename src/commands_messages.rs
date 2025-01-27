@@ -13,8 +13,10 @@ use tokio::sync::{broadcast, Mutex};
 use crate::{
     consts::{HELP_MESSAGE, SHUTDOWN_MESSAGE},
     input::{analyze_input, InputType},
+    picture::{
+        handle_picture_message, start_picture_session, stop_picture_session, PictureSessions,
+    },
     practice::{check_practice_answer, start_practice_session, stop_practice_session},
-    picture::{handle_picture_message, start_picture_session, stop_picture_session, PictureSessions},
     story::generate_story,
     talk::{handle_talk_message, start_talk_session, stop_talk_session, TalkSessions},
     translation::{
@@ -62,6 +64,8 @@ pub enum Command {
     UseChatGPT,
     #[command(description = "switch to Claude")]
     UseClaude,
+    #[command(description = "switch to DeepSeek")]
+    UseDeepSeek,
     #[command(description = "start talk mode")]
     Talk,
     #[command(description = "stop talk mode")]
@@ -116,6 +120,7 @@ pub async fn handle_command(
     picture_sessions: &PictureSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
+    use_deepseek: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -202,7 +207,8 @@ pub async fn handle_command(
             bot.send_message(msg.chat.id, "Generating a story...")
                 .await?;
             let use_chatgpt = *use_chatgpt.lock().await;
-            match generate_story(use_chatgpt).await {
+            let use_deepseek = *use_deepseek.lock().await;
+            match generate_story(use_chatgpt, use_deepseek).await {
                 Ok(story) => {
                     bot.send_message(msg.chat.id, story).await?;
                 }
@@ -215,12 +221,22 @@ pub async fn handle_command(
         Command::UseChatGPT => {
             let mut use_chatgpt = use_chatgpt.lock().await;
             *use_chatgpt = true;
-            bot.send_message(msg.chat.id, "Switched to ChatGPT.").await?;
+            *use_deepseek.lock().await = false;
+            bot.send_message(msg.chat.id, "Switched to ChatGPT.")
+                .await?;
         }
         Command::UseClaude => {
             let mut use_chatgpt = use_chatgpt.lock().await;
             *use_chatgpt = false;
+            *use_deepseek.lock().await = false;
             bot.send_message(msg.chat.id, "Switched to Claude.").await?;
+        }
+        Command::UseDeepSeek => {
+            let mut use_deepseek = use_deepseek.lock().await;
+            *use_deepseek = true;
+            *use_chatgpt.lock().await = false;
+            bot.send_message(msg.chat.id, "Switched to DeepSeek.")
+                .await?;
         }
         Command::Talk => {
             start_talk_session(bot, msg, talk_sessions).await?;
@@ -246,6 +262,7 @@ pub async fn handle_message(
     picture_sessions: &PictureSessions,
     delete_mode: &DeleteMode,
     use_chatgpt: &Arc<Mutex<bool>>,
+    use_deepseek: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     if !is_user_authorized(msg).await {
         bot.send_message(
@@ -257,7 +274,7 @@ pub async fn handle_message(
     }
 
     let chat_id = msg.chat.id;
-    
+
     // Check if user is in picture mode
     {
         let picture_lock = picture_sessions.lock().await;
@@ -293,8 +310,7 @@ pub async fn handle_message(
                         .await?;
                 }
                 Ok(false) => {
-                    bot.send_message(msg.chat.id, "❌ Word not found.")
-                        .await?;
+                    bot.send_message(msg.chat.id, "❌ Word not found.").await?;
                 }
                 Err(e) => {
                     bot.send_message(msg.chat.id, format!("❌ Error: {}", e))
@@ -332,11 +348,12 @@ pub async fn handle_message(
             };
 
             let use_chatgpt = *use_chatgpt.lock().await;
+            let use_deepseek = *use_deepseek.lock().await;
             let claude_response = if let Some(context) = context {
                 let combined_text = format!("Context: {}\nQuery: {}", context, text);
-                translate_text(&combined_text, use_chatgpt).await?
+                translate_text(&combined_text, use_chatgpt, use_deepseek).await?
             } else {
-                translate_text(text, use_chatgpt).await?
+                translate_text(text, use_chatgpt, use_deepseek).await?
             };
 
             let response = match input_type {

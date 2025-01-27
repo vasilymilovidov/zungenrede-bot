@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ai::{
         make_claude_request, ChatGPTMessage, ChatGPTRequest, ChatGPTResponse, ClaudeMessage,
-        ClaudeRequest, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, EXPLANATION_PROMPT,
-        FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT, GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT,
-        RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT, SIMPLIFY_PROMPT,
+        ClaudeRequest, CHATGPT_API_URL, CHATGPT_MODEL, CONTEXT_PROMPT, DEEPSEEK_API_URL,
+        DEEPSEEK_MODEL, EXPLANATION_PROMPT, FREEFORM_PROMPT, GERMAN_SENTENCE_PROMPT,
+        GERMAN_WORD_PROMPT, GRAMMAR_CHECK_PROMPT, RUSSIAN_TO_GERMAN_PROMPT, RUSSIAN_WORD_PROMPT,
+        SIMPLIFY_PROMPT,
     },
     input::{analyze_input, InputType},
 };
@@ -100,9 +101,11 @@ pub fn get_weighted_translation(translations: &[Translation]) -> Option<Translat
     Some(translations[0].clone())
 }
 
-pub async fn translate_text(text: &str, use_chatgpt: bool) -> Result<String> {
+pub async fn translate_text(text: &str, use_chatgpt: bool, use_deepseek: bool) -> Result<String> {
     if use_chatgpt {
         translate_with_chatgpt(text).await
+    } else if use_deepseek {
+        translate_with_deepseek(text).await
     } else {
         translate_with_claude(text).await
     }
@@ -153,6 +156,41 @@ async fn translate_with_chatgpt(text: &str) -> Result<String> {
 
     let response = client
         .post(CHATGPT_API_URL)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&request)
+        .send()
+        .await?
+        .json::<ChatGPTResponse>()
+        .await?;
+
+    Ok(response.choices[0].message.content.clone())
+}
+
+async fn translate_with_deepseek(text: &str) -> Result<String> {
+    let api_key =
+        env::var("DEEPSEEK_API_KEY").expect("DEEPSEEK_API_KEY environment variable not set");
+
+    let client = reqwest::Client::new();
+
+    let (system_prompt, processed_text) = prepare_prompt(text);
+
+    let messages = vec![ChatGPTMessage {
+        role: "user".to_string(),
+        content: if processed_text.is_empty() {
+            system_prompt
+        } else {
+            format!("{}\n\n{}", system_prompt, processed_text)
+        },
+    }];
+
+    let request = ChatGPTRequest {
+        model: DEEPSEEK_MODEL.to_string(),
+        messages,
+    };
+
+    let response = client
+        .post(DEEPSEEK_API_URL)
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&request)
