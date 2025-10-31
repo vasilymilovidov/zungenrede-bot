@@ -124,7 +124,7 @@ async fn translate_with_claude(text: &str) -> Result<String> {
     }];
 
     let request = ClaudeRequest {
-        model: "claude-3-5-sonnet-20241022".to_string(),
+        model: "claude-sonnet-4-5".to_string(),
         max_tokens: 4000,
         messages,
     };
